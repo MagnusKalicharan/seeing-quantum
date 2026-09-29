@@ -12,8 +12,10 @@ import ShareModal from './ShareModal';
 import SaveModal from './SaveModal';
 import SavedCircuitsModal from './SavedCircuitsModal';
 import ExportImportModal from './ExportImportModal';
+import QuantumTutorModal from './QuantumTutorModal';
 import { saveDraft, loadDraft } from './circuitStorage';
 import { simulateClientSide } from './clientSimulator';
+import { Bot } from 'lucide-react';
 
 const GATE_TYPES = ['H', 'X', 'Y', 'Z', 'S', 'T', 'CX', 'SWAP'];
 
@@ -41,7 +43,7 @@ export default function Workbench({ onBack, initialSharedCircuit = null, initial
   const [hoveredPaletteGate, setHoveredPaletteGate] = useState(null);
 
   // Modals state
-  const [activeModal, setActiveModal] = useState(null); // 'save' | 'library' | 'export' | 'share' | null
+  const [activeModal, setActiveModal] = useState(null); // 'save' | 'library' | 'export' | 'share' | 'tutor' | null
   const [targetCircuitForModal, setTargetCircuitForModal] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -405,6 +407,16 @@ export default function Workbench({ onBack, initialSharedCircuit = null, initial
               <Share2 size={16} className="text-[#B75D29]" />
               Share Link
             </button>
+
+            {/* Quantum AI Tutor */}
+            <button
+              onClick={() => setActiveModal('tutor')}
+              className="flex items-center gap-2 bg-gradient-to-r from-[#B75D29]/15 to-[#B75D29]/5 hover:from-[#B75D29]/25 hover:to-[#B75D29]/10 border border-[#B75D29]/30 text-[#B75D29] px-5 py-2.5 rounded-full font-semibold text-sm transition-all shadow-xs active:scale-95 cursor-pointer"
+              title="Open AI Quantum Tutor with circuit awareness"
+            >
+              <Bot size={16} className="text-[#B75D29]" />
+              AI Tutor
+            </button>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
@@ -668,6 +680,13 @@ export default function Workbench({ onBack, initialSharedCircuit = null, initial
         }}
         circuitName={targetCircuitForModal?.name || circuitName}
         gates={targetCircuitForModal?.gates || gates}
+      />
+
+      {/* AI Quantum Tutor Modal */}
+      <QuantumTutorModal
+        isOpen={activeModal === 'tutor'}
+        onClose={() => setActiveModal(null)}
+        currentGates={gates}
       />
     </div>
   );
