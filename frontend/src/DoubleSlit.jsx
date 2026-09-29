@@ -692,7 +692,7 @@ export default function DoubleSlit({ onBack, onNavigate }) {
 
     // ── Build Bloch sphere (invisible to start) ──
     const blochMat = new THREE.MeshStandardMaterial({
-      color: 0x2244aa, transparent: true, opacity: 0, wireframe: false, side: THREE.DoubleSide,
+      color: 0x2244aa, transparent: true, opacity: 0, wireframe: false, side: THREE.DoubleSide, depthWrite: false,
     });
     const blochSphere = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), blochMat);
     // Start position: top pole aligns with slit A (z≈+0.28), bottom pole with slit B
@@ -734,8 +734,8 @@ export default function DoubleSlit({ onBack, onNavigate }) {
     const arrowColor = 0xff8833;
     const arrowHelper = new THREE.ArrowHelper(arrowDir, new THREE.Vector3(0, 0, 0), arrowLen, arrowColor, 0.25, 0.15);
     // Make arrow transparent initially
-    arrowHelper.line.material = new THREE.LineBasicMaterial({ color: arrowColor, transparent: true, opacity: 0 });
-    arrowHelper.cone.material = new THREE.MeshBasicMaterial({ color: arrowColor, transparent: true, opacity: 0 });
+    arrowHelper.line.material = new THREE.LineBasicMaterial({ color: arrowColor, transparent: true, opacity: 0, depthTest: false });
+    arrowHelper.cone.material = new THREE.MeshBasicMaterial({ color: arrowColor, transparent: true, opacity: 0, depthTest: false });
     blochSphere.add(arrowHelper);
 
 
