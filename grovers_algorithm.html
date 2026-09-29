@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Grover's Algorithm — Interactive Quantum Visualizer</title>
+<meta name="description" content="Interactive 3D visualization of Grover's quantum search algorithm. Explore geometric and state-space representations, probability evolution, and quantum vs classical query comparison."/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060b14;--panel:#0d1526;--panel2:#111d33;
+  --border:rgba(100,180,255,0.12);--accent:#3b82f6;--accent2:#8b5cf6;
+  --marked:#f59e0b;--green:#10b981;--red:#ef4444;
+  --text:#e2e8f0;--muted:#64748b;
+  --glow:rgba(59,130,246,0.3);--glow2:rgba(245,158,11,0.4);
+}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:13px;overflow:hidden}
+#app{display:grid;grid-template-columns:260px 1fr 280px;grid-template-rows:48px 1fr;width:100vw;height:100vh}
+#header{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:0 20px;background:linear-gradient(90deg,#0d1526,#111d33);border-bottom:1px solid var(--border)}
+#header h1{font-size:15px;font-weight:600;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.subtitle{color:var(--muted);font-size:11px}
+#mode-tabs{margin-left:auto;display:flex;gap:4px}
+.tab-btn{padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all .2s}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 12px rgba(59,130,246,.4)}
+.tab-btn:hover:not(.active){color:var(--text);border-color:rgba(100,180,255,.3)}
+#left-panel{grid-column:1;grid-row:2;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:16px}
+.section-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.control-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.control-row label{color:var(--muted);font-size:11px;min-width:80px}
+.val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);min-width:22px}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--panel2);border-radius:2px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--glow)}
+.btn{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;transition:all .2s;text-align:center}
+.btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 10px var(--glow)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#2563eb;box-shadow:0 0 16px var(--glow)}
+.btn.danger{background:transparent;border-color:rgba(239,68,68,.4);color:var(--red)}
+.btn.danger:hover{background:rgba(239,68,68,.1)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;border-radius:20px;background:var(--panel2);border:1px solid var(--border);transition:.2s}
+.toggle-slider::before{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--accent);border-color:var(--accent)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px);background:#fff}
+.stat-box{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.stat-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.stat-row:last-child{margin-bottom:0}
+.stat-label{color:var(--muted);font-size:11px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent)}
+.stat-val.hi{color:var(--marked)}.stat-val.gr{color:var(--green)}
+.marked-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:5px}
+.state-pill{padding:4px 2px;text-align:center;border-radius:5px;border:1px solid var(--border);background:var(--panel2);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);transition:all .15s}
+.state-pill:hover{border-color:var(--accent);color:var(--accent)}
+.state-pill.selected{border-color:var(--marked);background:rgba(245,158,11,.15);color:var(--marked);box-shadow:0 0 8px var(--glow2)}
+#canvas-area{grid-column:2;grid-row:2;position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0a1428 0%,#060b14 70%)}
+#three-canvas{display:block;width:100%;height:100%}
+#step-info{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(13,21,38,.88);backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:10px;padding:8px 22px;text-align:center;white-space:nowrap;pointer-events:none;min-width:300px}
+#step-name{font-size:12px;font-weight:600;color:var(--accent)}
+#step-desc{font-size:11px;color:var(--muted);margin-top:2px}
+#optimal-badge{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.55);border-radius:20px;padding:5px 16px;font-size:11px;font-weight:600;color:var(--marked);display:none;animation:pb .9s ease-in-out infinite alternate;white-space:nowrap}
+@keyframes pb{from{box-shadow:0 0 8px rgba(245,158,11,.2)}to{box-shadow:0 0 22px rgba(245,158,11,.65)}}
+#right-panel{grid-column:3;grid-row:2;background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+.compare-block{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.compare-header{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+.compare-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.compare-row:last-child{margin-bottom:0}
+.compare-icon{font-size:16px}.compare-info{flex:1}
+.compare-name{font-size:11px;color:var(--text)}
+.compare-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;line-height:1}
+.compare-val.cl{color:var(--red)}.compare-val.qu{color:var(--green)}
+.compare-bar-wrap{width:100%;height:6px;background:var(--panel);border-radius:3px;margin-top:4px}
+.compare-bar{height:100%;border-radius:3px;transition:width .4s}
+.compare-bar.clb{background:var(--red)}.compare-bar.qub{background:var(--green)}
+.speedup-badge{margin-top:8px;text-align:center;font-size:11px;color:var(--green);font-weight:500}
+.amp-table-wrap{background:var(--panel2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.amp-table-hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)}
+.amp-table-hdr span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.amp-table-body{max-height:180px;overflow-y:auto;padding:8px}
+.amp-row{display:grid;grid-template-columns:42px 1fr 50px;gap:6px;align-items:center;margin-bottom:5px}
+.amp-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.amp-bar-wrap{height:8px;background:var(--panel);border-radius:4px;position:relative}
+.amp-bar-fill{position:absolute;top:0;height:100%;border-radius:4px;transition:width .4s,left .4s}
+.amp-bar-fill.pos{background:var(--accent)}.amp-bar-fill.neg{background:var(--red)}
+.amp-val{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-align:right}
+.chart-panel{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+#chart-hdr{display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+#chart-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+#chart-legend{display:flex;gap:10px}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--muted)}
+.legend-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+#prob-chart{width:100%;height:130px;display:block;flex-shrink:0}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(100,180,255,.2);border-radius:2px}
+.geom-label{position:absolute;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;pointer-events:none;text-shadow:0 0 12px currentColor}
+#drag-hint{position:absolute;top:12px;right:14px;background:rgba(13,21,38,.75);backdrop-filter:blur(6px);border:1px solid rgba(100,180,255,.18);border-radius:8px;padding:5px 10px;font-size:10px;color:rgba(148,180,230,.7);pointer-events:none;display:none;line-height:1.5}
+#drag-hint b{color:rgba(148,180,230,1)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="header">
+    <div>
+      <h1>&#9883; Grover's Algorithm Visualizer</h1>
+      <div class="subtitle">Quantum search &middot; Educational 3D explorer</div>
+    </div>
+    <div id="mode-tabs">
+      <button class="tab-btn active" id="tab-geo" onclick="setMode('geo')">&#9679; Geometric</button>
+      <button class="tab-btn" id="tab-ring" onclick="setMode('ring')">&#11835; State Ring</button>
+    </div>
+  </header>
+
+  <aside id="left-panel">
+    <div>
+      <div class="section-label">System</div>
+      <div class="control-row">
+        <label>Qubits (n)</label>
+        <input type="range" id="qubit-slider" min="2" max="6" value="3" oninput="onQubitChange(this.value)"/>
+        <span class="val" id="qubit-val">3</span>
+      </div>
+      <div class="control-row">
+        <label>States N=2&#8319;</label>
+        <span class="val" id="n-val" style="color:var(--accent2)">8</span>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Marked State |w&#10217;</div>
+      <div id="marked-list" class="marked-list"></div>
+    </div>
+    <div>
+      <div class="section-label">Operators</div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="applyOracle()">&#9734; Oracle</button>
+        <button class="btn" onclick="applyDiffusion()">&#8767; Diffuse</button>
+      </div>
+      <button class="btn" style="margin-top:6px" onclick="applyFullIteration()">&#9889; Full Iteration</button>
+    </div>
+    <div>
+      <div class="section-label">Auto-Run</div>
+      <div class="toggle-row" style="margin-bottom:10px">
+        <span style="color:var(--muted);font-size:11px">Auto-run iterations</span>
+        <label class="toggle"><input type="checkbox" id="auto-toggle" onchange="toggleAuto(this.checked)"/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Speed</label>
+        <input type="range" id="speed-slider" min="1" max="10" value="4" oninput="updateSpeed(this.value)"/>
+        <span class="val" id="speed-val">4</span>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">View Options</div>
+      <div class="toggle-row" style="margin-bottom:8px">
+        <span style="color:var(--muted);font-size:11px">Probability mode (amp&#178;)</span>
+        <label class="toggle"><input type="checkbox" id="prob-toggle" onchange="toggleProbView(this.checked)"/><span class="toggle-slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span style="color:var(--muted);font-size:11px">Glow effects</span>
+        <label class="toggle"><input type="checkbox" id="glow-toggle" checked onchange="toggleGlow(this.checked)"/><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Live State</div>
+      <div class="stat-box">
+        <div class="stat-row"><span class="stat-label">Full iterations</span><span class="stat-val" id="iter-val">0</span></div>
+        <div class="stat-row"><span class="stat-label">Oracle calls</span><span class="stat-val" id="oracle-val">0</span></div>
+        <div class="stat-row"><span class="stat-label">P(marked)</span><span class="stat-val hi" id="prob-val">—</span></div>
+        <div class="stat-row"><span class="stat-label">Optimal &#8776; &#960;&#8730;N/4</span><span class="stat-val gr" id="opt-val">—</span></div>
+      </div>
+    </div>
+    <button class="btn danger" onclick="resetState()">&#8634; Reset to |s&#10217;</button>
+  </aside>
+
+  <main id="canvas-area">
+    <canvas id="three-canvas"></canvas>
+    <div id="step-info">
+      <div id="step-name">Welcome</div>
+      <div id="step-desc">Pick a marked state |w&#10217; on the left, then apply Oracle &#8594; Diffusion.</div>
+    </div>
+    <div id="optimal-badge">&#9733; Optimal iteration reached &#8212; peak P(marked)!</div>
+    <div id="drag-hint"><b>&#8635; Drag</b> to orbit &nbsp;&#8231;&nbsp; <b>Scroll</b> to zoom &nbsp;&#8231;&nbsp; <b>Right-drag</b> to pan</div>
+  </main>
+
+  <aside id="right-panel">
+    <div>
+      <div class="section-label">Classical vs Quantum</div>
+      <div class="compare-block">
+        <div class="compare-header">Query Complexity</div>
+        <div class="compare-row">
+          <span class="compare-icon">&#128187;</span>
+          <div class="compare-info">
+            <div class="compare-name">Classical &#8212; O(N/2) queries</div>
+            <div class="compare-val cl" id="cmp-classical">&#8212;</div>
+            <div class="compare-bar-wrap"><div class="compare-bar clb" id="bar-cl" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div class="compare-row">
+          <span class="compare-icon">&#9883;</span>
+          <div class="compare-info">
+            <div class="compare-name">Quantum &#8212; oracle calls used</div>
+            <div class="compare-val qu" id="cmp-quantum">0</div>
+            <div class="compare-bar-wrap"><div class="compare-bar qub" id="bar-qu" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="speedup-badge" id="speedup-badge"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Amplitude / Probability</div>
+      <div class="amp-table-wrap">
+        <div class="amp-table-hdr"><span>|state&#10217;</span><span id="amp-mode-lbl">amplitude</span></div>
+        <div class="amp-table-body" id="amp-table-body"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Geometric Picture</div>
+      <div class="stat-box">
+        <div class="stat-row"><span class="stat-label">&#952; = arcsin(1/&#8730;N)</span><span class="stat-val" id="theta-val">&#8212;</span></div>
+        <div class="stat-row"><span class="stat-label">Angle from |w&#10217;</span><span class="stat-val" id="cur-angle-val">&#8212;</span></div>
+        <div class="stat-row"><span class="stat-label">P = sin&#178;(angle)</span><span class="stat-val hi" id="prob-geo">&#8212;</span></div>
+        <div class="stat-row"><span class="stat-label">Rotation/iter</span><span class="stat-val" id="rot-val">&#8212;</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">P(marked) vs Iteration</div>
+      <div class="chart-panel">
+        <div id="chart-hdr">
+          <span id="chart-title">Probability curve</span>
+          <div id="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>P(marked)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,.6)"></div>Optimal</div>
+          </div>
+        </div>
+        <canvas id="prob-chart"></canvas>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+var qn=3,N=8,markedState=0,amp=[],iterations=0,oracleCalls=0;
+var showProb=false,showGlow=true,vizMode='geo';
+var autoRunning=false,autoInterval=null,probHistory=[],lastOp=null,animating=false;
+var geoAngle=0,geoTheta=0,geoTweening=false;
+
+function initState(){
+  N=1<<qn; amp=[];
+  var u=1/Math.sqrt(N);
+  for(var i=0;i<N;i++) amp.push(u);
+  iterations=0;oracleCalls=0;
+  probHistory=[{iter:0,prob:u*u}];
+  geoTheta=Math.asin(1/Math.sqrt(N));
+  geoAngle=geoTheta; // |s> starts at angle theta from horizontal (sin(theta)=1/sqrt(N)=initial amplitude)
+  lastOp=null;
+  updateUI();buildMarkedList();rebuildAmpTable();rebuildScene();
+}
+function getOpt(){return Math.round(Math.PI/4*Math.sqrt(N));}
+
+function applyOracle(silent){
+  if(animating)return;
+  amp[markedState]*=-1;oracleCalls++;lastOp='oracle';
+  if(!silent){
+    setInfo('Oracle Applied','amp['+markedState+'] sign-flipped: this is the quantum oracle marking the target without measurement.');
+    updateUI();animRing();
+  }
+}
+function applyDiffusion(silent){
+  if(animating)return;
+  var mean=0;
+  for(var i=0;i<N;i++) mean+=amp[i];
+  mean/=N;
+  for(var i=0;i<N;i++) amp[i]=2*mean-amp[i];
+  if(lastOp==='oracle'){
+    iterations++;
+    var prevAngle=geoAngle;
+    geoAngle+=2*geoTheta; // accumulate: each full iteration rotates by 2theta
+    if(!silent) tweenGeo(prevAngle,geoAngle);
+  }
+  probHistory.push({iter:iterations,prob:amp[markedState]*amp[markedState]});
+  lastOp='diffusion';
+  if(iterations===getOpt()) showBadge();
+  if(!silent){
+    setInfo('Diffusion Applied','Inversion about the mean: amplitude flows into marked state. Each step rotates |psi> by 2theta toward |w>.');
+    updateUI();animRing();
+  }
+}
+function applyFullIteration(){
+  if(animating)return;
+  applyOracle(true);applyDiffusion(false);
+  setInfo('Full Iteration','Oracle+Diffusion: state rotated by 2theta='+(2*geoTheta*180/Math.PI).toFixed(2)+'deg toward |w>.');
+}
+function resetState(){
+  stopAuto();geoAngle=geoTheta;initState();
+  setInfo('Reset','Uniform superposition restored. All '+N+' states: amplitude = 1/sqrt('+N+').');
+  var b=document.getElementById('optimal-badge');if(b)b.style.display='none';
+}
+
+function onQubitChange(v){
+  qn=parseInt(v);
+  document.getElementById('qubit-val').textContent=qn;
+  document.getElementById('n-val').textContent=1<<qn;
+  markedState=0;stopAuto();initState();
+}
+function setMode(m){
+  vizMode=m;
+  document.getElementById('tab-geo').classList.toggle('active',m==='geo');
+  document.getElementById('tab-ring').classList.toggle('active',m==='ring');
+  rebuildScene();
+}
+function toggleAuto(on){if(on)startAuto();else stopAuto();}
+function startAuto(){
+  autoRunning=true;
+  var spd=parseInt(document.getElementById('speed-slider').value);
+  autoInterval=setInterval(function(){if(!animating)applyFullIteration();},Math.round(2400/spd));
+}
+function stopAuto(){
+  autoRunning=false;if(autoInterval){clearInterval(autoInterval);autoInterval=null;}
+  var el=document.getElementById('auto-toggle');if(el)el.checked=false;
+}
+function updateSpeed(v){document.getElementById('speed-val').textContent=v;if(autoRunning){stopAuto();startAuto();}}
+function toggleProbView(on){showProb=on;document.getElementById('amp-mode-lbl').textContent=on?'probability':'amplitude';updateAmpTable();updatePoints();}
+function toggleGlow(on){showGlow=on;}
+function setInfo(n,d){document.getElementById('step-name').textContent=n;document.getElementById('step-desc').textContent=d;}
+function showBadge(){var b=document.getElementById('optimal-badge');b.style.display='block';setTimeout(function(){b.style.display='none';},5000);}
+
+function updateUI(){
+  document.getElementById('iter-val').textContent=iterations;
+  document.getElementById('oracle-val').textContent=oracleCalls;
+  var p=amp[markedState]*amp[markedState];
+  document.getElementById('prob-val').textContent=p.toFixed(4);
+  document.getElementById('opt-val').textContent=getOpt();
+  var cl=Math.ceil(N/2);
+  document.getElementById('cmp-classical').textContent=cl;
+  document.getElementById('cmp-quantum').textContent=oracleCalls;
+  document.getElementById('bar-qu').style.width=Math.min(oracleCalls/cl*100,100)+'%';
+  if(oracleCalls>0){
+    document.getElementById('speedup-badge').textContent='Speedup at this point: '+(cl/oracleCalls).toFixed(1)+'x vs classical';
+  }else document.getElementById('speedup-badge').textContent='';
+  document.getElementById('theta-val').textContent=(geoTheta*180/Math.PI).toFixed(3)+'deg';
+  document.getElementById('cur-angle-val').textContent=((Math.PI/2-geoAngle)*180/Math.PI).toFixed(2)+'deg';
+  document.getElementById('prob-geo').textContent=(Math.sin(geoAngle)*Math.sin(geoAngle)).toFixed(4);
+  document.getElementById('rot-val').textContent=(2*geoTheta*180/Math.PI).toFixed(2)+'deg/iter';
+  updateAmpTable();drawChart();
+}
+
+function buildMarkedList(){
+  var el=document.getElementById('marked-list');el.innerHTML='';
+  for(var i=0;i<N;i++){
+    (function(idx){
+      var d=document.createElement('div');
+      d.className='state-pill'+(idx===markedState?' selected':'');
+      d.textContent='|'+idx.toString(2).padStart(qn,'0')+'\u27e9';
+      d.onclick=function(){markedState=idx;resetState();};
+      el.appendChild(d);
+    })(i);
+  }
+}
+
+function rebuildAmpTable(){
+  var body=document.getElementById('amp-table-body');body.innerHTML='';
+  for(var i=0;i<N;i++){
+    var row=document.createElement('div');
+    row.className='amp-row';row.id='ar'+i;
+    row.innerHTML='<span class="amp-lbl">|'+i.toString(2).padStart(qn,'0')+'\u27e9</span>'+
+      '<div class="amp-bar-wrap"><div class="amp-bar-fill" id="ab'+i+'" style="width:0%;left:50%"></div></div>'+
+      '<span class="amp-val" id="av'+i+'">0.000</span>';
+    body.appendChild(row);
+  }
+  updateAmpTable();
+}
+function updateAmpTable(){
+  var mx, pctScale;
+  if(showProb){
+    // Probabilities are in [0,1]: use absolute scale so bars show true proportion
+    mx=1.0;
+    pctScale=100; // bar fills 0->100% of the wrap
+  } else {
+    // Amplitudes can be negative: use max-amplitude normalization, centered layout
+    mx=0.001;
+    for(var i=0;i<N;i++)if(Math.abs(amp[i])>mx)mx=Math.abs(amp[i]);
+    pctScale=50; // bar fills 0->50% each side of center
+  }
+  for(var i=0;i<N;i++){
+    var val=showProb?amp[i]*amp[i]:amp[i];
+    var pct=Math.abs(val)/mx*pctScale;
+    var bar=document.getElementById('ab'+i);var txt=document.getElementById('av'+i);
+    if(!bar)continue;
+    if(showProb){
+      // Probabilities: always positive, bar starts at left edge
+      bar.className='amp-bar-fill pos';
+      bar.style.left='0%';
+      bar.style.width=pct+'%';
+    } else {
+      // Amplitudes: centered, positive right of center, negative left
+      bar.className='amp-bar-fill '+(val>=0?'pos':'neg');
+      if(val>=0){bar.style.left='50%';bar.style.width=pct+'%';}
+      else{bar.style.left=(50-pct)+'%';bar.style.width=pct+'%';}
+    }
+    txt.textContent=val.toFixed(3);
+    var rowEl=document.getElementById('ar'+i);
+    if(rowEl)rowEl.style.opacity=(i===markedState)?'1':'0.68';
+    bar.style.filter=(i===markedState)?'drop-shadow(0 0 4px rgba(245,158,11,.8))':'';
+  }
+}
+
+function drawChart(){
+  var cv=document.getElementById('prob-chart');
+  var ctx=cv.getContext('2d');
+  var W=cv.offsetWidth,H=cv.offsetHeight;
+  cv.width=W;cv.height=H;if(W<=0||H<=0)return;
+  var pl=34,pr=14,pt=8,pb=20,cw=W-pl-pr,ch=H-pt-pb;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(100,180,255,0.07)';ctx.lineWidth=1;
+  for(var y=0;y<=4;y++){var yy=pt+ch*(1-y/4);ctx.beginPath();ctx.moveTo(pl,yy);ctx.lineTo(pl+cw,yy);ctx.stroke();}
+  var maxIter=Math.max(probHistory.length>0?probHistory[probHistory.length-1].iter:0,6);
+  var opt=getOpt();var optX=pl+(opt/maxIter)*cw;
+  ctx.strokeStyle='rgba(59,130,246,0.5)';ctx.setLineDash([4,3]);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(optX,pt);ctx.lineTo(optX,pt+ch);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='rgba(100,180,255,0.45)';ctx.font='9px JetBrains Mono,monospace';
+  ctx.fillText('1.0',2,pt+4);ctx.fillText('0.5',2,pt+ch*0.5+4);ctx.fillText('0.0',2,pt+ch+4);
+  ctx.fillStyle='rgba(59,130,246,0.45)';ctx.font='8px JetBrains Mono,monospace';
+  ctx.fillText('opt',optX-8,pt+ch+13);
+  if(probHistory.length<2)return;
+  var g=ctx.createLinearGradient(0,pt,0,pt+ch);
+  g.addColorStop(0,'rgba(245,158,11,0.42)');g.addColorStop(1,'rgba(245,158,11,0.02)');
+  ctx.beginPath();
+  for(var i=0;i<probHistory.length;i++){
+    var px=pl+(probHistory[i].iter/maxIter)*cw;var py=pt+ch*(1-probHistory[i].prob);
+    if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+  }
+  var last=probHistory[probHistory.length-1];
+  ctx.lineTo(pl+(last.iter/maxIter)*cw,pt+ch);ctx.lineTo(pl,pt+ch);ctx.closePath();
+  ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();ctx.strokeStyle='#f59e0b';ctx.lineWidth=1.8;
+  for(var i=0;i<probHistory.length;i++){
+    var px=pl+(probHistory[i].iter/maxIter)*cw;var py=pt+ch*(1-probHistory[i].prob);
+    if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  for(var i=0;i<probHistory.length;i++){
+    var px=pl+(probHistory[i].iter/maxIter)*cw;var py=pt+ch*(1-probHistory[i].prob);
+    ctx.beginPath();ctx.arc(px,py,3,0,6.28);
+    ctx.fillStyle=(probHistory[i].iter===opt)?'#fff':'#f59e0b';ctx.fill();
+  }
+}
+
+/* THREE.JS */
+var renderer,scene,camera,points=[],ringGroup=null,geoGroup=null;
+var geoArrs={},geoProj=null,geoLbls={},raycaster,mouse,clock=0;
+var orbitControls=null;
+var TILT=0.24;
+
+function initThree(){
+  var cv=document.getElementById('three-canvas');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(54,1,0.01,100);
+  camera.position.set(0,3.5,7.5);camera.lookAt(0,0,0);
+  resizeRenderer();
+  window.addEventListener('resize',function(){resizeRenderer();drawChart();});
+  rebuildScene();renderLoop();
+}
+function resizeRenderer(){
+  var el=document.getElementById('canvas-area');
+  renderer.setSize(el.clientWidth,el.clientHeight,false);
+  if(camera){camera.aspect=el.clientWidth/el.clientHeight;camera.updateProjectionMatrix();}
+}
+function clearScene(){
+  while(scene.children.length)scene.remove(scene.children[0]);
+  points=[];geoGroup=null;ringGroup=null;geoArrs={};geoProj=null;
+}
+function rebuildScene(){
+  clearScene();
+  scene.add(new THREE.AmbientLight(0x1a2a44,2.8));
+  var dl=new THREE.DirectionalLight(0x4488ff,1.4);dl.position.set(5,9,5);scene.add(dl);
+  addGrid();
+  if(vizMode==='geo')buildGeoScene();else buildRingScene();
+}
+function addGrid(){
+  var m=new THREE.LineBasicMaterial({color:0x1a3060,transparent:true,opacity:0.42});
+  for(var x=-8;x<=8;x++)scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,-0.01,-8),new THREE.Vector3(x,-0.01,8)]),m));
+  for(var z=-8;z<=8;z++)scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-8,-0.01,z),new THREE.Vector3(8,-0.01,z)]),m));
+}
+
+function buildGeoScene(){
+  camera.position.set(0,4.5,6.5);camera.lookAt(0,0,0);
+  // Setup orbit controls for user interaction
+  if(orbitControls){orbitControls.dispose();orbitControls=null;}
+  orbitControls=new THREE.OrbitControls(camera,renderer.domElement);
+  orbitControls.enableDamping=true;
+  orbitControls.dampingFactor=0.07;
+  orbitControls.enableZoom=true;
+  orbitControls.zoomSpeed=0.8;
+  orbitControls.rotateSpeed=0.6;
+  orbitControls.enablePan=true;
+  orbitControls.panSpeed=0.5;
+  orbitControls.minDistance=2;
+  orbitControls.maxDistance=18;
+  orbitControls.target.set(0,0,0);
+  orbitControls.update();
+  // Show drag hint
+  var hint=document.getElementById('drag-hint');
+  if(hint){hint.style.display='block';}
+  geoGroup=new THREE.Group();scene.add(geoGroup);
+  var L=4.5;
+  var pm=new THREE.MeshBasicMaterial({color:0x0a1830,transparent:true,opacity:0.32,side:THREE.DoubleSide});
+  var pl=new THREE.Mesh(new THREE.PlaneGeometry(10,10),pm);pl.rotation.x=-Math.PI/2+TILT;geoGroup.add(pl);
+  var cPts=[];for(var i=0;i<=128;i++)cPts.push(planeV((i/128)*Math.PI*2,L));
+  geoGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cPts),new THREE.LineBasicMaterial({color:0x1e4a90,transparent:true,opacity:0.6})));
+  geoArrs.w=makeArrow(0xf59e0b,L,0.03,0.12);
+  geoArrs.s=makeArrow(0x3b82f6,L,0.028,0.11);
+  geoArrs.psi=makeArrow(0x10b981,L,0.038,0.15);
+  geoGroup.add(geoArrs.w,geoArrs.s,geoArrs.psi);
+  var pg=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,1,0)]);
+  geoProj=new THREE.Line(pg,new THREE.LineDashedMaterial({color:0xffffff,transparent:true,opacity:0.22,dashSize:0.1,gapSize:0.07}));
+  geoProj.computeLineDistances();geoGroup.add(geoProj);
+  ensureLabel('lw','|w\u27e9','#f59e0b');
+  ensureLabel('ls','|s\u27e9','#3b82f6');
+  ensureLabel('lpsi','|\u03c8\u27e9','#10b981');
+  ensureLabel('lth','\u03b8','#aaaaaa');
+  updateGeoViz();
+}
+function planeV(a,r){return new THREE.Vector3(Math.cos(a)*r,Math.sin(a)*r*Math.cos(TILT),Math.sin(a)*r*Math.sin(TILT));}
+function makeArrow(col,len,sr,hr){
+  var g=new THREE.Group();
+  var m=new THREE.MeshPhongMaterial({color:col,emissive:col,emissiveIntensity:0.4});
+  var sh=new THREE.Mesh(new THREE.CylinderGeometry(sr,sr,len-0.42,8),m);sh.position.y=(len-0.42)/2;
+  var hd=new THREE.Mesh(new THREE.ConeGeometry(hr,0.42,8),m);hd.position.y=len-0.21;
+  g.add(sh,hd);return g;
+}
+function aimGroup(grp,dir){
+  var up=new THREE.Vector3(0,1,0);var d=dir.clone().normalize();
+  if(d.lengthSq()<1e-6)return;grp.quaternion.setFromUnitVectors(up,d);
+}
+function updateGeoViz(ov){
+  if(!geoArrs.w)return;
+  var cur=(ov!==undefined)?ov:geoAngle;
+  var wA=Math.PI/2;
+  // |s> fixed at theta from horizontal — it never moves, it's the initial uniform superposition axis
+  var sA=geoTheta;
+  aimGroup(geoArrs.w,planeV(wA,1));
+  aimGroup(geoArrs.s,planeV(sA,1));
+  aimGroup(geoArrs.psi,planeV(cur,1));
+  // Dashed projection: tip of |psi> down to |w> axis
+  var tip=planeV(cur,4.5);
+  var proj=planeV(wA,Math.sin(cur)*4.5);
+  if(geoProj){
+    var pos=geoProj.geometry.attributes.position;
+    pos.setXYZ(0,tip.x,tip.y,tip.z);
+    pos.setXYZ(1,proj.x,proj.y,proj.z);
+    pos.needsUpdate=true;
+    geoProj.computeLineDistances();
+  }
+  posLabel('lw',planeV(wA,5.25));
+  posLabel('ls',planeV(sA,5.25));
+  posLabel('lpsi',planeV(cur,5.25));
+  // theta label between |s> and |w>
+  posLabel('lth',planeV((wA+sA)/2,1.5));
+  // angle of current state from |w> (positive = below |w>, negative = above = overshoot)
+  var angFromW=(Math.PI/2-cur)*180/Math.PI;
+  document.getElementById('cur-angle-val').textContent=angFromW.toFixed(2)+'deg from |w>';
+  // P(marked) = sin^2(current angle)
+  document.getElementById('prob-geo').textContent=(Math.sin(cur)*Math.sin(cur)).toFixed(4);
+}
+function ensureLabel(id,text,col){
+  var el=document.getElementById('geo-'+id);
+  if(!el){el=document.createElement('div');el.id='geo-'+id;el.className='geom-label';el.style.color=col;el.textContent=text;document.getElementById('canvas-area').appendChild(el);}
+  el.style.display=(vizMode==='geo')?'block':'none';geoLbls[id]=el;
+}
+function posLabel(id,wp){
+  var el=geoLbls[id];if(!el||!camera||!renderer)return;
+  el.style.display=(vizMode==='geo')?'block':'none';if(vizMode!=='geo')return;
+  var v=wp.clone().project(camera);var rect=renderer.domElement.getBoundingClientRect();
+  el.style.left=((v.x*0.5+0.5)*rect.width-10)+'px';el.style.top=((-v.y*0.5+0.5)*rect.height-10)+'px';
+}
+function hideLabels(){for(var k in geoLbls)geoLbls[k].style.display='none';}
+function tweenGeo(from,to){
+  var t=0;geoTweening=true;
+  function step(){t+=0.03;var e=t<0.5?2*t*t:-1+(4-2*t)*t;updateGeoViz(from+(to-from)*Math.min(e,1));if(t<1)requestAnimationFrame(step);else{geoTweening=false;updateGeoViz();}}
+  requestAnimationFrame(step);
+}
+
+function buildRingScene(){
+  hideLabels();
+  // Dispose orbit controls — ring uses auto-orbit
+  if(orbitControls){orbitControls.dispose();orbitControls=null;}
+  var hint=document.getElementById('drag-hint');
+  if(hint){hint.style.display='none';}
+  camera.position.set(0,5,8.5);camera.lookAt(0,0,0);
+  ringGroup=new THREE.Group();scene.add(ringGroup);points=[];
+  var R=Math.min(3.6,1.9+N*0.11);
+  var rPts=[];for(var i=0;i<=128;i++){var a=(i/128)*Math.PI*2;rPts.push(new THREE.Vector3(Math.cos(a)*R,0,Math.sin(a)*R));}
+  ringGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rPts),new THREE.LineBasicMaterial({color:0x1e4090,transparent:true,opacity:0.38})));
+  for(var i=0;i<N;i++){
+    (function(idx){
+      var ang=(idx/N)*Math.PI*2-Math.PI/2;
+      var x=Math.cos(ang)*R,z=Math.sin(ang)*R;
+      var isM=idx===markedState,col=isM?0xf59e0b:0x3b82f6;
+      var mat=new THREE.MeshPhongMaterial({color:col,emissive:col,emissiveIntensity:0.5,transparent:true,opacity:0.92});
+      var mesh=new THREE.Mesh(new THREE.SphereGeometry(0.18,16,16),mat);
+      mesh.position.set(x,0,z);mesh.userData.index=idx;ringGroup.add(mesh);points.push(mesh);
+      var cv2=document.createElement('canvas');cv2.width=128;cv2.height=46;
+      var c2=cv2.getContext('2d');c2.font='bold 17px JetBrains Mono,monospace';
+      c2.fillStyle=isM?'#f59e0b':'#64748b';c2.textAlign='center';c2.textBaseline='middle';
+      c2.fillText('|'+idx.toString(2).padStart(qn,'0')+'\u27e9',64,23);
+      var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv2),transparent:true,opacity:0.88}));
+      sp.scale.set(0.9,0.35,1);sp.position.set(x*1.36,0.44,z*1.36);ringGroup.add(sp);
+    })(i);
+  }
+  var pCount=360,pPos=new Float32Array(pCount*3);
+  for(var i=0;i<pCount;i++){var r2=4.2+Math.random()*2.2,a2=Math.random()*Math.PI*2;pPos[i*3]=Math.cos(a2)*r2;pPos[i*3+1]=(Math.random()-0.5)*0.45;pPos[i*3+2]=Math.sin(a2)*r2;}
+  var pg2=new THREE.BufferGeometry();pg2.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+  scene.add(new THREE.Points(pg2,new THREE.PointsMaterial({color:0x3b82f6,size:0.045,transparent:true,opacity:0.26})));
+  raycaster=new THREE.Raycaster();mouse=new THREE.Vector2();
+  renderer.domElement.addEventListener('click',onCanvasClick);
+  updatePoints();
+}
+function updatePoints(){
+  if(vizMode!=='ring'||!points.length)return;
+  var mx=0.001;for(var i=0;i<N;i++)if(Math.abs(amp[i])>mx)mx=Math.abs(amp[i]);
+  for(var i=0;i<N;i++){
+    var val=showProb?amp[i]*amp[i]:amp[i];var av=Math.abs(val);var isM=i===markedState;
+    points[i].scale.setScalar(0.55+av/mx*1.5);
+    var col=isM?0xf59e0b:(val>=0?0x3b82f6:0xef4444);
+    points[i].material.color.setHex(col);points[i].material.emissive.setHex(col);
+    if(isM)points[i].material.emissiveIntensity=showGlow?0.6+Math.abs(Math.sin(clock*3.5))*0.5:0.3;
+    else points[i].material.emissiveIntensity=showGlow?av/mx*0.55:0.08;
+    points[i].position.y=(val/mx)*0.88;
+  }
+}
+function onCanvasClick(e){
+  if(vizMode!=='ring'||!raycaster||!points.length)return;
+  var rect=renderer.domElement.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  var hits=raycaster.intersectObjects(points);
+  if(hits.length){markedState=hits[0].object.userData.index;resetState();}
+}
+function animRing(){
+  if(vizMode!=='ring')return;animating=true;var t=0;
+  function step(){t+=0.05;updatePoints();if(t<1)requestAnimationFrame(step);else animating=false;}
+  requestAnimationFrame(step);
+}
+function renderLoop(){
+  requestAnimationFrame(renderLoop);clock+=0.016;
+  if(vizMode==='ring'){
+    camera.position.x=Math.sin(clock*0.065)*8.5;
+    camera.position.z=Math.cos(clock*0.065)*8.5;
+    camera.position.y=5+Math.sin(clock*0.04)*0.4;
+    camera.lookAt(0,0,0);updatePoints();
+  }else if(vizMode==='geo'){
+    // User-controlled orbit — no auto camera movement
+    if(orbitControls)orbitControls.update();
+    if(!geoTweening)updateGeoViz();
+  }
+  renderer.render(scene,camera);
+}
+
+window.addEventListener('load',function(){
+  initThree();qn=3;markedState=0;
+  geoTheta=Math.asin(1/Math.sqrt(1<<qn));geoAngle=Math.PI/2-geoTheta;
+  initState();
+  setInfo('Welcome','Select a marked state |w> on the left, then use Oracle and Diffusion operators to run Grover search step by step.');
+});
+</script>
+</body>
+</html>

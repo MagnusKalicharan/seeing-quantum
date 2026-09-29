@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --color-seeing-bg: #FAFAFA;
+  --color-seeing-surface: #FFFFFF;
+  --color-seeing-text: #2A2A2A;
+  --color-seeing-subtext: #71717A;
+  --color-seeing-border: #E4E4E7;
+  --color-seeing-accent: #B75D29;
+  --color-seeing-accent-light: #F6EEE8;
+  --color-seeing-pink: #EC4899;
+  --color-seeing-pink-light: #FDF2F8;
+  
+  --font-serif: 'Lora', 'Georgia', serif;
+  --font-sans: 'Inter', 'Helvetica', sans-serif;
+  --font-mono: 'Fira Code', 'Courier New', monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-seeing-bg);
+    background-image: radial-gradient(circle at 50% 0%, #FFF7F2 0%, transparent 80%);
+    color: var(--color-seeing-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #D4D4D8;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #A1A1AA;
+}
+
+/* Micro-animations */
+.gate-enter {
+  animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.seeing-shadow {
+  box-shadow: 0 12px 32px -4px rgba(183, 93, 41, 0.04), 
+              0 4px 12px -2px rgba(0, 0, 0, 0.03),
+              inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.wire-line {
+  background-image: linear-gradient(90deg, #D4D4D8 50%, transparent 50%);
+  background-size: 8px 1px;
+}
+
+@keyframes tooltipPop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(8px) scale(0.95); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.animate-tooltip {
+  animation: tooltipPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
