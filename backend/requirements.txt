@@ -2,3 +2,6 @@ fastapi
 uvicorn
 qiskit
 qiskit-aer
+httpx
+requests
+pypdf

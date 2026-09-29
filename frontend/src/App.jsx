@@ -6,6 +6,7 @@ import ChapterGates from './ChapterGates';
 import DoubleSlit from './DoubleSlit';
 import ModuleStaircase from './ModuleStaircase';
 import ModuleFilter from './ModuleFilter';
+import FloatingTutorButton from './FloatingTutorButton';
 import { getSharedCircuitFromUrl } from './circuitStorage';
 
 export default function App() {
@@ -45,6 +46,9 @@ export default function App() {
           initialAccessMode={sharedData?.accessMode || 'write'}
         />
       )}
+
+      {/* Global AI Quantum Tutor floating button accessible on any chapter & page */}
+      <FloatingTutorButton />
     </>
   );
 }

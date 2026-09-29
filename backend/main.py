@@ -167,3 +167,131 @@ def simulate(circuit_input: CircuitInput):
         "bloch_vectors": bloch_vectors,
         "math_steps": math_steps
     }
+
+from rag_engine import QuantumKnowledgeBase
+
+knowledge_base = QuantumKnowledgeBase()
+
+class TutorRequest(BaseModel):
+    message: str
+    circuit_context: Optional[dict] = None
+    model: Optional[str] = "llama3" # e.g. llama3, mistral, phi3, gemma, qwen
+    history: Optional[List[dict]] = []
+
+@app.get("/books")
+async def list_books():
+    """List loaded quantum books/materials and reload if changed."""
+    knowledge_base.load_books()
+    return {
+        "books": knowledge_base.get_books_list(),
+        "total_chunks": len(knowledge_base.documents)
+    }
+
+@app.get("/ollama/status")
+async def check_ollama_status():
+    """Check if local Ollama daemon is running and get available models."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            res = await client.get("http://localhost:11434/api/tags")
+            if res.status_code == 200:
+                data = res.json()
+                models = [m.get("name") for m in data.get("models", [])]
+                return {
+                    "available": True, 
+                    "models": models,
+                    "books": knowledge_base.get_books_list(),
+                    "total_chunks": len(knowledge_base.documents)
+                }
+    except Exception as e:
+        return {"available": False, "error": str(e), "models": []}
+    return {"available": False, "models": []}
+
+@app.post("/tutor")
+async def tutor_chat(req: TutorRequest):
+    """
+    Quantum AI Tutor Endpoint powered by local Ollama + RAG Book Knowledge.
+    Injects live circuit state, retrieved textbook excerpts, and pedagogical instructions.
+    """
+    import httpx
+    
+    # System prompt shaping the personality of the "Seeing Quantum" tutor
+    system_instruction = (
+        "You are 'Seeing Quantum Tutor', an expert quantum computing pedagogical AI assistant. "
+        "Your mission is to make quantum mechanics intuitive, visual, and mathematical yet friendly. "
+        "Keep your explanations clear, structured, and interactive. Use Markdown, LaTeX ($...$ and $$...$$), "
+        "bullet points, and analogies where appropriate (e.g. Bloch sphere as a globe, superposition as spinning coins). "
+        "When relevant textbook context is provided, cite and use it to enhance your answer. "
+        "When the user is asking about their current circuit, refer directly to their circuit's gates and statevector."
+    )
+
+    # 1. Retrieve relevant excerpts from the user's books/notes
+    book_snippets = knowledge_base.search(req.message, top_k=2)
+    rag_context = ""
+    if book_snippets:
+        rag_context = "\n\n[RELEVANT TEXTBOOK / COURSE EXCERPTS]:\n" + "\n---\n".join(
+            [f"From '{doc['source']}':\n{doc['chunk']}" for doc in book_snippets]
+        ) + "\n"
+
+    # 2. Build circuit context string if circuit context was provided
+    circuit_ctx_str = ""
+    if req.circuit_context:
+        gates = req.circuit_context.get("gates", [])
+        active_state = req.circuit_context.get("activeState", "|00>")
+        probs = req.circuit_context.get("probabilities", [])
+        
+        circuit_ctx_str = f"\n\n[CURRENT USER WORKBENCH CIRCUIT]:\n- Number of Gates: {len(gates)}\n- Gates: {gates}\n- Active Statevector: {active_state}\n"
+        if probs:
+            prob_str = ", ".join([f"|{p.get('state')}>: {p.get('probability', 0)*100:.1f}%" for p in probs])
+            circuit_ctx_str += f"- Measurement Probabilities: {prob_str}\n"
+
+    user_prompt = f"{req.message}{circuit_ctx_str}{rag_context}"
+
+    messages = [{"role": "system", "content": system_instruction}]
+    
+    # Append recent conversation history
+    if req.history:
+        for h in req.history[-6:]: # keep last 6 turns
+            messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+            
+    messages.append({"role": "user", "content": user_prompt})
+
+    # Call Ollama /api/chat
+    ollama_model = req.model or "llama3"
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            payload = {
+                "model": ollama_model,
+                "messages": messages,
+                "stream": False,
+                "options": {
+                    "temperature": 0.6,
+                    "top_p": 0.9
+                }
+            }
+            res = await client.post("http://localhost:11434/api/chat", json=payload)
+            if res.status_code == 200:
+                data = res.json()
+                reply_text = data.get("message", {}).get("content", "")
+                return {
+                    "reply": reply_text,
+                    "model": ollama_model,
+                    "source": "ollama",
+                    "sources_used": [b["source"] for b in book_snippets]
+                }
+            else:
+                return {
+                    "error": f"Ollama returned status {res.status_code}",
+                    "source": "error"
+                }
+    except Exception as e:
+        return {
+            "error": f"Could not connect to Ollama (http://localhost:11434): {str(e)}",
+            "source": "offline"
+        }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+
+
