@@ -1,4 +1,4 @@
-�import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import * as d3 from 'd3';
@@ -37,7 +37,7 @@ export default function ChapterGrovers({ onBack }) {
   const [isDiffusing, setIsDiffusing] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
   
-  // Sandbox State
+  // Sandbox ↓State
   const [isOracleNext, setIsOracleNext] = useState(true);
   const [sandboxProbability, setSandboxProbability] = useState(3.12);
   const [sandboxLoops, setSandboxLoops] = useState(0);
@@ -332,7 +332,7 @@ export default function ChapterGrovers({ onBack }) {
     circle.computeLineDistances();
     geometricGroup.add(circle);
     
-    const thetaAngle = Math.asin(1 / √8)); 
+    const thetaAngle = Math.asin(1 / Math.sqrt(8)); 
     const sLineGeo = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(0,0,0), 
         new THREE.Vector3(Math.cos(thetaAngle)*3.8, Math.sin(thetaAngle)*3.8, 0)
@@ -386,11 +386,11 @@ export default function ChapterGrovers({ onBack }) {
     labelS.position.set(Math.cos(thetaAngle)*3.7, Math.sin(thetaAngle)*3.7 + 0.3, 0);
     geometricGroup.add(labelS);
     
-    const labelTheta1 = createTextSprite('-�', '#ff6666');
+    const labelTheta1 = createTextSprite('-θ', '#ff6666');
     labelTheta1.position.set(1.7, -0.4, 0); 
     geometricGroup.add(labelTheta1);
     
-    const labelTheta2 = createTextSprite('+2�', '#66ff66');
+    const labelTheta2 = createTextSprite('+2θ', '#66ff66');
     labelTheta2.position.set(1.0, 1.8, 0); 
     geometricGroup.add(labelTheta2);
 
@@ -701,7 +701,7 @@ export default function ChapterGrovers({ onBack }) {
         tl.to(geometricGroup.position, { x: 0, y: 4, duration: 1 }, 0); // Ensure centered
         
         tl.call(() => {
-            const theta = Math.asin(1 / √8));
+            const theta = Math.asin(1 / Math.sqrt(8));
             sLineGeo.setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(Math.cos(theta)*3.8, Math.sin(theta)*3.8, 0)]);
             labelS.position.set(Math.cos(theta)*3.7, Math.sin(theta)*3.7 + 0.3, 0);
             
@@ -738,7 +738,7 @@ export default function ChapterGrovers({ onBack }) {
     updateThreeRotationRef.current = (val) => {
         const p = val / 100;
         let currentAngle;
-        const theta = Math.asin(1 / √8));
+        const theta = Math.asin(1 / Math.sqrt(8));
         
         if (p <= 0.5) {
             const t = p * 2;
@@ -1261,7 +1261,7 @@ export default function ChapterGrovers({ onBack }) {
 
   }, []);
 
-  // Sandbox D3 Handlers
+  // Sandbox ↓D3 Handlers
   const handleSandboxOracle = () => {
       setIsOracleNext(false);
       const amps = amplitudesRef.current;
@@ -1664,7 +1664,7 @@ export default function ChapterGrovers({ onBack }) {
             </div>
 
             <div className="absolute bottom-10 left-0 right-0 text-center text-[#A1A1AA] text-xs font-mono uppercase tracking-widest animate-pulse">
-                Scroll to Continue � 
+                Scroll to Continue ↓ 
             </div>
           </section>
 
@@ -1776,13 +1776,13 @@ export default function ChapterGrovers({ onBack }) {
             </div>
             
             <div className="absolute bottom-10 left-0 right-0 text-center text-[#A1A1AA] text-xs font-mono uppercase tracking-widest animate-pulse">
-                Scroll to Enter Sandbox � 
+                Scroll to Enter Sandbox ↓ 
             </div>
           </section>
           
           <section id="step-7-sandbox" ref={step7Ref} className="min-h-[100vh] flex flex-col p-6 py-24 bg-white border-t border-[#E4E4E7] relative">
             
-            <h2 className="text-3xl font-serif text-[#1A1A1A] font-medium tracking-tight mb-6">The Sandbox Finale</h2>
+            <h2 className="text-3xl font-serif text-[#1A1A1A] font-medium tracking-tight mb-6">The Sandbox ↓Finale</h2>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
               Welcome to the full 32-qubit Grover's Algorithm sandbox. Here you have a vault with 32 possible keys, but only one is correct.
             </p>
@@ -1795,7 +1795,7 @@ export default function ChapterGrovers({ onBack }) {
                 <li>Click <strong>[Oracle (-θ)]</strong> to mark the secret key, flipping its quantum phase downwards.</li>
                 <li>Click <strong>[Diffuser (+2θ)]</strong> to fold the probabilities around the average, shrinking the wrong answers and growing the target.</li>
                 <li>Repeat this cycle. Notice how the target probability climbs rapidly!</li>
-                <li>But be careful�if you loop too many times, the wave collapses in on itself and you'll miss the target.</li>
+                <li>But be carefulif you loop too many times, the wave collapses in on itself and you'll miss the target.</li>
                 <li>When the probability hits peak amplitude (&gt;95%), click <strong>[MEASURE]</strong> to unlock the vault.</li>
               </ol>
             </div>
@@ -1812,9 +1812,9 @@ export default function ChapterGrovers({ onBack }) {
                   
                   {/* HERO HEADER */}
                   <div className="text-center mb-16">
-                      <div className="text-xs font-sans text-[#B75D29] font-bold tracking-[0.2em] uppercase mb-4">Chapter 3 � Deep Dive</div>
+                      <div className="text-xs font-sans text-[#B75D29] font-bold tracking-[0.2em] uppercase mb-4">Chapter 3  Deep Dive</div>
                       <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#2A2A2A] mb-6 leading-tight">The Mathematics of <br/>Grover's Algorithm</h1>
-                      <p className="text-lg md:text-xl text-[#71717A] font-sans font-light max-w-2xl mx-auto">The algorithm that broke symmetric cryptography � and how the linear algebra actually works.</p>
+                      <p className="text-lg md:text-xl text-[#71717A] font-sans font-light max-w-2xl mx-auto">The algorithm that broke symmetric cryptography  and how the linear algebra actually works.</p>
                       <div className="w-24 h-px bg-[#B75D29]/30 mx-auto mt-12"></div>
                   </div>
 
