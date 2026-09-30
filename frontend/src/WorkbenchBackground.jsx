@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-export default function WorkbenchBackground() {
+export default function WorkbenchBackground({ className }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
 
@@ -103,12 +103,12 @@ export default function WorkbenchBackground() {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [className]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none workbench-canvas-layer"
+      className={className || "fixed inset-0 w-full h-full pointer-events-none workbench-canvas-layer"}
       style={{ zIndex: 0, opacity: 0.85 }}
     />
   );

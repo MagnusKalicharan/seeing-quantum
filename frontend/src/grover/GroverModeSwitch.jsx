@@ -7,7 +7,7 @@ import { Clapperboard, GraduationCap } from 'lucide-react';
 export default function GroverModeSwitch({ mode, onModeChange }) {
   return (
     <div
-      className="fixed top-6 right-6 z-[100] flex rounded-full border border-[#E4E4E7] bg-white/95 shadow-lg p-1 gap-0.5"
+      className="fixed top-[72px] right-8 z-[100] flex rounded-full border border-[#E4E4E7] bg-white/95 shadow-sm p-1 gap-0.5"
       role="tablist"
       aria-label="Grover experience mode"
     >

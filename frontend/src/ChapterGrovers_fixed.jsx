@@ -1,14 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+�import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import * as d3 from 'd3';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import WorkbenchBackground from '../WorkbenchBackground';
+import WorkbenchBackground from './WorkbenchBackground';
 
-/** Original scrollytelling + Three.js / D3 Grover animation (Chapter 5). */
-export default function GroverScrollyExperience({ onBack }) {
+export default function ChapterGrovers({ onBack }) {
   const mountRef = useRef(null);
   const d3CanvasRef = useRef(null);
   const d3WrapperRef = useRef(null);
@@ -38,7 +37,7 @@ export default function GroverScrollyExperience({ onBack }) {
   const [isDiffusing, setIsDiffusing] = useState(false);
   const [rotationProgress, setRotationProgress] = useState(0);
   
-  // Sandbox ↓State
+  // Sandbox State
   const [isOracleNext, setIsOracleNext] = useState(true);
   const [sandboxProbability, setSandboxProbability] = useState(3.12);
   const [sandboxLoops, setSandboxLoops] = useState(0);
@@ -123,10 +122,9 @@ export default function GroverScrollyExperience({ onBack }) {
           });
       }
   }, [activeStep]);
-  const [targetKeyIndex, setTargetKeyIndex] = useState(3);
+  const [targetKeyIndex, setTargetKeyIndex] = useState(7);
   useEffect(() => {
-      // Force it to unlock on the 4th key (index 3) to save time for presentation
-      setTargetKeyIndex(3);
+      setTargetKeyIndex(Math.floor(Math.random() * 5) + 3);
   }, []);
 
   useEffect(() => { 
@@ -192,7 +190,7 @@ export default function GroverScrollyExperience({ onBack }) {
     scene.add(vaultGroup);
 
     const vaultGeo = new THREE.BoxGeometry(5, 7, 2);
-    const vaultMat = new THREE.MeshStandardMaterial({ color: 0xB75D29, roughness: 0.4, metalness: 0.8 });
+    const vaultMat = new THREE.MeshStandardMaterial({ color: 0x1f1f25, roughness: 0.7, metalness: 0.3 });
     const vault = new THREE.Mesh(vaultGeo, vaultMat);
     vault.position.y = 3.5;
     vault.castShadow = true;
@@ -388,11 +386,11 @@ export default function GroverScrollyExperience({ onBack }) {
     labelS.position.set(Math.cos(thetaAngle)*3.7, Math.sin(thetaAngle)*3.7 + 0.3, 0);
     geometricGroup.add(labelS);
     
-    const labelTheta1 = createTextSprite('-θ', '#ff6666');
+    const labelTheta1 = createTextSprite('-�', '#ff6666');
     labelTheta1.position.set(1.7, -0.4, 0); 
     geometricGroup.add(labelTheta1);
     
-    const labelTheta2 = createTextSprite('+2θ', '#66ff66');
+    const labelTheta2 = createTextSprite('+2�', '#66ff66');
     labelTheta2.position.set(1.0, 1.8, 0); 
     geometricGroup.add(labelTheta2);
 
@@ -805,15 +803,11 @@ export default function GroverScrollyExperience({ onBack }) {
         renderer.setSize(width, height);
         composer.setSize(width, height);
     };
-    
-    const resizeObserver = new ResizeObserver(() => {
-        handleResize();
-    });
-    resizeObserver.observe(container);
+    window.addEventListener('resize', handleResize);
 
     return () => {
         cancelAnimationFrame(rafId);
-        resizeObserver.disconnect();
+        window.removeEventListener('resize', handleResize);
         if (container.contains(renderer.domElement)) {
             container.removeChild(renderer.domElement);
         }
@@ -1267,7 +1261,7 @@ export default function GroverScrollyExperience({ onBack }) {
 
   }, []);
 
-  // Sandbox ↓D3 Handlers
+  // Sandbox D3 Handlers
   const handleSandboxOracle = () => {
       setIsOracleNext(false);
       const amps = amplitudesRef.current;
@@ -1478,11 +1472,15 @@ export default function GroverScrollyExperience({ onBack }) {
   };
 
   useEffect(() => {
-      // Resize is handled autonomously by ResizeObserver on the containers
+      const timer = setTimeout(() => {
+          window.dispatchEvent(new Event('resize'));
+      }, 50);
+      return () => clearTimeout(timer);
   }, [activeStep]);
 
   return (
     <div className="h-screen bg-transparent text-[#2A2A2A] font-sans flex flex-col relative overflow-hidden">
+      <WorkbenchBackground />
       
       <div className="flex items-center justify-between px-8 py-4 border-b border-[#E4E4E7] bg-white/90 backdrop-blur-sm z-30 relative seeing-shadow">
         <div className="flex items-center gap-4">
@@ -1495,8 +1493,8 @@ export default function GroverScrollyExperience({ onBack }) {
             </button>
           )}
           <div className="h-5 w-px bg-[#E4E4E7]" />
-          <span className="text-sm font-mono text-[#B75D29] uppercase tracking-widest">Chapter 5</span>
-          <h1 className="text-xl font-serif text-[#2A2A2A]">Grover's Algorithm</h1>
+          <span className="text-xs font-mono text-[#B75D29] uppercase tracking-widest">Chapter 5</span>
+          <h1 className="text-lg font-serif text-[#2A2A2A]">Grover's Algorithm</h1>
         </div>
       </div>
 
@@ -1505,7 +1503,7 @@ export default function GroverScrollyExperience({ onBack }) {
           <div ref={mountRef} className="absolute inset-0 z-0" />
           
           <div className="absolute top-4 left-4 z-10 pointer-events-none">
-            <div className="text-xs font-mono text-white/40 uppercase tracking-widest bg-black/30 px-2 py-1 rounded">
+            <div className="text-[10px] font-mono text-white/40 uppercase tracking-widest bg-black/30 px-2 py-1 rounded">
                 {activeStep === 7 ? '32-Qubit Sandbox' : (activeStep === 6 ? 'Geometric Representation' : '3D Simulation')}
             </div>
           </div>
@@ -1629,7 +1627,7 @@ export default function GroverScrollyExperience({ onBack }) {
               In the worst case scenario, it takes <span className="font-medium text-[#2A2A2A]">7 wrong guesses</span> to find the correct one. Because classical logic has no way to "look ahead", it is essentially testing blindly.
             </p>
             
-            <div className="p-6 bg-[#EAF2FA] border-2 border-[#20609C]/20 shadow-md rounded-2xl space-y-4">
+            <div className="p-5 bg-[#FAFAFA] border border-[#E4E4E7] rounded-xl space-y-4">
               <div className="flex justify-between items-center">
                 <div className="text-xs text-[#A1A1AA] font-mono uppercase tracking-wide">
                     Status: {isUnlocked ? 'Vault Unlocked' : (isAutoPlaying ? 'Auto-Searching...' : 'Awaiting Input')}
@@ -1666,7 +1664,7 @@ export default function GroverScrollyExperience({ onBack }) {
             </div>
 
             <div className="absolute bottom-10 left-0 right-0 text-center text-[#A1A1AA] text-xs font-mono uppercase tracking-widest animate-pulse">
-                Scroll to Continue ↓ 
+                Scroll to Continue � 
             </div>
           </section>
 
@@ -1680,7 +1678,7 @@ export default function GroverScrollyExperience({ onBack }) {
               By passing our qubits through a <span className="font-medium text-[#2A2A2A]">Hadamard Gate</span>, we blast them into a uniform superposition. Instead of existing as one definite key, the system checks all 8 possibilities simultaneously as a single probability wave.
             </p>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
-              Notice the visualization on the left. All 8 states now have an identical probability amplitude of <span className="font-mono text-[#B75D29] bg-[#B75D29]/10 px-1 py-0.5 rounded">+0.353</span> (<span className="italic">1 / √8</span>). 
+              Notice the visualization on the left. All 8 states now have an identical probability amplitude of <span className="font-mono text-[#B75D29] bg-[#B75D29]/10 px-1 py-0.5 rounded">+0.353</span> (<span className="italic">1 / ��a8</span>). 
             </p>
           </section>
 
@@ -1748,7 +1746,7 @@ export default function GroverScrollyExperience({ onBack }) {
               But notice something mathematically beautiful: because the Oracle and Diffuser treat all wrong answers identically, they always move as a single synchronized block.
             </p>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
-              We can compress the entire messy chart into just two dimensions. All 7 wrong answers merge into the horizontal <span className="font-mono bg-gray-200 px-1 rounded text-xs">|r⟩</span> axis, and our 1 correct answer becomes the vertical <span className="font-mono bg-gray-200 px-1 rounded text-xs">|w⟩</span> axis.
+              We can compress the entire messy chart into just two dimensions. All 7 wrong answers merge into the horizontal <span className="font-mono bg-gray-200 px-1 rounded text-xs">|r�x�</span> axis, and our 1 correct answer becomes the vertical <span className="font-mono bg-gray-200 px-1 rounded text-xs">|w�x�</span> axis.
             </p>
             <p className="text-[17px] text-[#2A2A2A] font-medium leading-relaxed mb-8">
               Grover's algorithm is just a single vector rotating by 2θ on a flat circle!
@@ -1778,13 +1776,13 @@ export default function GroverScrollyExperience({ onBack }) {
             </div>
             
             <div className="absolute bottom-10 left-0 right-0 text-center text-[#A1A1AA] text-xs font-mono uppercase tracking-widest animate-pulse">
-                Scroll to Enter Sandbox ↓ 
+                Scroll to Enter Sandbox � 
             </div>
           </section>
           
           <section id="step-7-sandbox" ref={step7Ref} className="min-h-[100vh] flex flex-col p-6 py-24 bg-white border-t border-[#E4E4E7] relative">
             
-            <h2 className="text-3xl font-serif text-[#1A1A1A] font-medium tracking-tight mb-6">The Sandbox ↓Finale</h2>
+            <h2 className="text-3xl font-serif text-[#1A1A1A] font-medium tracking-tight mb-6">The Sandbox Finale</h2>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
               Welcome to the full 32-qubit Grover's Algorithm sandbox. Here you have a vault with 32 possible keys, but only one is correct.
             </p>
@@ -1797,24 +1795,26 @@ export default function GroverScrollyExperience({ onBack }) {
                 <li>Click <strong>[Oracle (-θ)]</strong> to mark the secret key, flipping its quantum phase downwards.</li>
                 <li>Click <strong>[Diffuser (+2θ)]</strong> to fold the probabilities around the average, shrinking the wrong answers and growing the target.</li>
                 <li>Repeat this cycle. Notice how the target probability climbs rapidly!</li>
-                <li>But be carefulif you loop too many times, the wave collapses in on itself and you'll miss the target.</li>
+                <li>But be careful�if you loop too many times, the wave collapses in on itself and you'll miss the target.</li>
                 <li>When the probability hits peak amplitude (&gt;95%), click <strong>[MEASURE]</strong> to unlock the vault.</li>
               </ol>
             </div>
           </section>
 
           <section id="step-8-deep-dive" ref={step8Ref} className="min-h-[100vh] bg-[#FAFAFA] relative border-t border-[#E4E4E7] transition-all duration-1000 z-30 flex flex-col items-center">
-              {activeStep >= 8 && (
-                  <WorkbenchBackground className="fixed inset-0 w-full h-screen pointer-events-none workbench-canvas-layer" />
-              )}
+              {/* Background Pattern */}
+              <div className="absolute inset-0 z-0 pointer-events-none opacity-30" style={{ 
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='40' viewBox='0 0 120 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q 30 40, 60 20 T 120 20' stroke='rgba(210, 180, 140, 0.4)' fill='none' stroke-width='1'/%3E%3Cpath d='M0 20 Q 30 0, 60 20 T 120 20' stroke='rgba(210, 180, 140, 0.4)' fill='none' stroke-width='1'/%3E%3C/svg%3E")`, 
+                  backgroundSize: '120px 40px' 
+              }}></div>
               
               <div className="max-w-[1000px] w-full mx-auto relative z-10 px-8 py-24 font-serif">
                   
                   {/* HERO HEADER */}
                   <div className="text-center mb-16">
-                      <div className="text-xs font-sans text-[#B75D29] font-bold tracking-[0.2em] uppercase mb-4">Chapter 3  Deep Dive</div>
+                      <div className="text-xs font-sans text-[#B75D29] font-bold tracking-[0.2em] uppercase mb-4">Chapter 3 � Deep Dive</div>
                       <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#2A2A2A] mb-6 leading-tight">The Mathematics of <br/>Grover's Algorithm</h1>
-                      <p className="text-lg md:text-xl text-[#71717A] font-sans font-light max-w-2xl mx-auto">The algorithm that broke symmetric cryptography  and how the linear algebra actually works.</p>
+                      <p className="text-lg md:text-xl text-[#71717A] font-sans font-light max-w-2xl mx-auto">The algorithm that broke symmetric cryptography � and how the linear algebra actually works.</p>
                       <div className="w-24 h-px bg-[#B75D29]/30 mx-auto mt-12"></div>
                   </div>
 
@@ -1945,12 +1945,12 @@ export default function GroverScrollyExperience({ onBack }) {
                           <div className="grid grid-cols-1 gap-6 text-[17px]">
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">01 / Initial Superposition</h3>
-                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|ψ₁⟩ = 0.353|000⟩ + 0.353|001⟩ + ... + <span className="font-bold text-black">0.353|101⟩</span> + ... + 0.353|111⟩</p>
+                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|s� = 0.353|000� + 0.353|001� + ... + <span className="font-bold text-black">0.353|101�</span> + ... + 0.353|111�</p>
                               </div>
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">02 / Apply Oracle</h3>
                                   <p className="mb-2">The Oracle flips the sign of the target state ({"$|101\\rangle$"}):</p>
-                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|ψ₁⟩ = 0.353|000⟩ + 0.353|001⟩ + ... <span className="font-bold text-[#ff0033]">- 0.353|101⟩</span> + ... + 0.353|111⟩</p>
+                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|�����x� = 0.353|000� + 0.353|001� + ... <span className="font-bold text-[#ff0033]">- 0.353|101�</span> + ... + 0.353|111�</p>
                               </div>
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">03 / Calculate the Mean</h3>
@@ -1961,10 +1961,10 @@ export default function GroverScrollyExperience({ onBack }) {
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">04 / Apply Diffuser (Inversion About Mean)</h3>
                                   <p className="mb-3">We apply the geometric reflection formula: <code className="bg-[#FAFAFA] px-2 py-1 rounded border border-[#E4E4E7] text-[#2A2A2A]">New = 2μ - Old</code></p>
                                   <ul className="list-disc pl-5 mb-4 text-[#71717A] space-y-2">
-                                      <li>For the 7 wrong answers: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - 0.353 ≈ 0.177</code></li>
-                                      <li>For the 1 target answer: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - (-0.353) ≈ 0.883</code></li>
+                                      <li>For the 7 wrong answers: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - 0.353 �0� 0.177</code></li>
+                                      <li>For the 1 target answer: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - (-0.353) �0� 0.883</code></li>
                                   </ul>
-                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|ψ₂⟩ = 0.177|000⟩ + 0.177|001⟩ + ... + <span className="font-bold text-[#00ffff] bg-black px-1">0.883|101⟩</span> + ... + 0.177|111⟩</p>
+                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|����x� = 0.177|000� + 0.177|001� + ... + <span className="font-bold text-[#00ffff] bg-black px-1">0.883|101�</span> + ... + 0.177|111�</p>
                                   <div className="mt-6 p-4 bg-[#F6EEE8] border border-[#B75D29]/20 rounded text-[#B75D29] font-bold text-center">
                                       The probability of measuring the target jumped from 12.5% to {"$(0.883)^2 \\approx 78\\%$"} in a single step!
                                   </div>

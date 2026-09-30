@@ -1,331 +1,139 @@
 import React, { useEffect, useRef } from 'react';
-import { basisKetPlain, psiKetPlain } from './quantumNotation';
 
-const ACCENT = '#B75D29';
-const ACCENT_LIGHT = 'rgba(183,93,41,0.15)';
-const WIRE_COLOR = 'rgba(180,160,140,0.5)';
-const TEXT_DARK = '#2A2A2A';
-const GATE_LABELS = ['H', 'X', 'CNOT', 'T', 'S', 'Z', 'Y', 'H', 'CNOT', 'T'];
-
-function QuantumCanvas() {
+function ScatteringBalls() {
   const canvasRef = useRef(null);
-  const animRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    let animationFrameId;
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const NUM_QUBITS = 5;
-    const GATE_SIZE = 32;
-    const PHASE_SPEED = 0.6;
+    // Ball setup
+    const numBalls = 90;
+    const colors = ['#B75D29', '#E4E4E7', '#F5A05A', '#2A2A2A', '#04AA6D'];
+    const balls = [];
 
-    // Each qubit wire has its own wave phase & gates
-    const wires = Array.from({ length: NUM_QUBITS }, (_, i) => ({
-      y: 0, // computed each frame
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.4 + Math.random() * 0.3,
-      amplitude: 10 + Math.random() * 14,
-      gates: []
-    }));
-
-    // Spawn gates periodically
-    const gatePool = [];
-    let lastGateTime = 0;
-    const GATE_INTERVAL = 900; // ms
-
-    let startTime = null;
-
-    function spawnGate(now) {
-      const wireIdx = Math.floor(Math.random() * NUM_QUBITS);
-      const label = GATE_LABELS[Math.floor(Math.random() * GATE_LABELS.length)];
-      gatePool.push({
-        wire: wireIdx,
-        label,
-        x: canvas.offsetWidth + GATE_SIZE,
-        born: now,
-        alpha: 0,
+    for (let i = 0; i < numBalls; i++) {
+      balls.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        radius: Math.random() * 8 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
       });
     }
 
-    function drawWaveFunction(ctx, x0, x1, cy, phase, amplitude, alpha) {
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      const grad = ctx.createLinearGradient(x0, 0, x1, 0);
-      grad.addColorStop(0, 'rgba(183,93,41,0)');
-      grad.addColorStop(0.2, `rgba(183,93,41,${alpha * 0.6})`);
-      grad.addColorStop(0.8, `rgba(183,93,41,${alpha * 0.6})`);
-      grad.addColorStop(1, 'rgba(183,93,41,0)');
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      const steps = 200;
-      for (let s = 0; s <= steps; s++) {
-        const t = s / steps;
-        const x = x0 + t * (x1 - x0);
-        const y = cy + Math.sin(t * Math.PI * 6 + phase) * amplitude
-                     * Math.sin(t * Math.PI); // envelope
-        if (s === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
+    let mouse = { x: -1000, y: -1000 };
+    const handleMouseMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    };
+    const handleMouseLeave = () => {
+      mouse.x = -1000;
+      mouse.y = -1000;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
 
-    function drawGate(ctx, x, cy, label, alpha) {
-      const w = label === 'CNOT' ? 46 : GATE_SIZE;
-      const h = GATE_SIZE;
-      ctx.save();
-      ctx.globalAlpha = alpha;
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Box (no shadowBlur — it repaints heavily over the animated canvas)
-      ctx.beginPath();
-      ctx.roundRect(x - w / 2, cy - h / 2, w, h, 6);
-      ctx.fillStyle = '#FFF7F2';
-      ctx.fill();
-      ctx.strokeStyle = ACCENT;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      for (let i = 0; i < numBalls; i++) {
+        let b = balls[i];
 
-      ctx.fillStyle = ACCENT;
-      ctx.font = `bold ${label === 'CNOT' ? 11 : 13}px 'Fira Code', monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, x, cy);
+        // Normal movement
+        b.x += b.vx;
+        b.y += b.vy;
 
-      ctx.restore();
-    }
+        // Bounce off walls
+        if (b.x < 0 || b.x > canvas.width) b.vx *= -1;
+        if (b.y < 0 || b.y > canvas.height) b.vy *= -1;
 
-    function drawProbabilityBars(ctx, now) {
-      const barW = 80;
-      const barH = 14;
-      const x = canvas.width - 130;
-      const startY = (canvas.height - NUM_QUBITS * (barH + 10)) / 2;
-      const states = ['00', '01', '10', '11'].map(basisKetPlain);
-      const t = now / 1000;
+        // Mouse interaction (Scattering)
+        let dx = mouse.x - b.x;
+        let dy = mouse.y - b.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let maxDist = 180;
 
-      ctx.save();
-      ctx.font = '11px "Fira Code", monospace';
-      ctx.textBaseline = 'middle';
-
-      states.forEach((s, i) => {
-        const prob = 0.1 + 0.4 * Math.abs(Math.sin(t * 0.5 + i * 1.2));
-        const y = startY + i * 34;
-
-        ctx.globalAlpha = 0.5;
-        ctx.fillStyle = '#E4E4E7';
-        ctx.beginPath();
-        ctx.roundRect(x, y, barW, barH, 4);
-        ctx.fill();
-
-        ctx.globalAlpha = 0.9;
-        const barGrad = ctx.createLinearGradient(x, 0, x + barW * prob, 0);
-        barGrad.addColorStop(0, ACCENT);
-        barGrad.addColorStop(1, '#F5A05A');
-        ctx.fillStyle = barGrad;
-        ctx.beginPath();
-        ctx.roundRect(x, y, barW * prob, barH, 4);
-        ctx.fill();
-
-        ctx.globalAlpha = 0.5;
-        ctx.fillStyle = TEXT_DARK;
-        ctx.textAlign = 'right';
-        ctx.fillText(s, x - 8, y + barH / 2);
-
-        ctx.textAlign = 'left';
-        ctx.fillText(`${(prob * 100).toFixed(0)}%`, x + barW + 6, y + barH / 2);
-      });
-
-      ctx.restore();
-    }
-
-    function draw(timestamp) {
-      if (!startTime) startTime = timestamp;
-      const now = timestamp - startTime;
-      const W = canvas.offsetWidth;
-      const H = canvas.offsetHeight;
-
-      ctx.clearRect(0, 0, W, H);
-
-      const WIRE_START = 80;
-      const WIRE_END = W - 200;
-      const WIRE_SPACING = H / (NUM_QUBITS + 1);
-
-      // Draw qubit labels + wires + wavefunctions
-      wires.forEach((wire, i) => {
-        wire.y = Math.round(WIRE_SPACING * (i + 1)) + 0.5;
-        wire.phase += wire.speed * 0.016;
-
-        // Wire line
-        ctx.save();
-        ctx.globalAlpha = 0.35;
-        ctx.setLineDash([6, 5]);
-        ctx.strokeStyle = WIRE_COLOR;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(WIRE_START, wire.y);
-        ctx.lineTo(WIRE_END, wire.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.restore();
-
-        // Wave function
-        drawWaveFunction(ctx, WIRE_START + 10, WIRE_END - 10, wire.y, wire.phase, wire.amplitude, 0.6);
-
-        // Qubit label
-        ctx.save();
-        ctx.globalAlpha = 0.55;
-        ctx.font = "italic 14px 'Lora', Georgia, serif";
-        ctx.fillStyle = TEXT_DARK;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(psiKetPlain(i), WIRE_START - 8, wire.y);
-        ctx.restore();
-      });
-
-      // Spawn & draw gates
-      if (now - lastGateTime > GATE_INTERVAL) {
-        spawnGate(now);
-        lastGateTime = now;
-      }
-
-      const speed = 90; // px per second
-      for (let i = gatePool.length - 1; i >= 0; i--) {
-        const g = gatePool[i];
-        const elapsed = (now - g.born) / 1000;
-        g.x = (W + GATE_SIZE) - elapsed * speed;
-
-        const fadeIn = Math.min(1, elapsed / 0.3);
-        const fadeOut = g.x < WIRE_START + 60 ? Math.max(0, (g.x - WIRE_START) / 60) : 1;
-        g.alpha = fadeIn * fadeOut;
-
-        const wireY = wires[g.wire].y;
-        drawGate(ctx, g.x, wireY, g.label, g.alpha);
-
-        if (g.x < WIRE_START - GATE_SIZE) {
-          gatePool.splice(i, 1);
+        if (dist < maxDist) {
+          let force = (maxDist - dist) / maxDist;
+          let angle = Math.atan2(dy, dx);
+          let targetX = b.x - Math.cos(angle) * force * 10;
+          let targetY = b.y - Math.sin(angle) * force * 10;
+          
+          b.vx += (targetX - b.x) * 0.1;
+          b.vy += (targetY - b.y) * 0.1;
         }
+
+        // Friction
+        b.vx *= 0.99;
+        b.vy *= 0.99;
+
+        // Maintain min speed
+        let speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        if (speed < 0.6) {
+          b.vx *= 1.1;
+          b.vy *= 1.1;
+        }
+
+        // Draw ball
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = b.color;
+        ctx.globalAlpha = 0.8;
+        ctx.fill();
+        ctx.closePath();
       }
 
-      // Probability bars on the right
-      drawProbabilityBars(ctx, now);
-
-      // Decorative circuit label
-      ctx.save();
-      ctx.globalAlpha = 0.2;
-      ctx.font = "700 11px 'Fira Code', monospace";
-      ctx.fillStyle = ACCENT;
-      ctx.letterSpacing = '3px';
-      ctx.fillText('QUANTUM CIRCUIT', WIRE_START, 28);
-      ctx.restore();
-
-      animRef.current = requestAnimationFrame(draw);
-    }
-
-    animRef.current = requestAnimationFrame(draw);
+      animationFrameId = requestAnimationFrame(render);
+    };
+    render();
 
     return () => {
-      cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+      cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-full"
-      style={{ display: 'block', imageRendering: 'auto' }}
-    />
-  );
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none opacity-60" />;
 }
 
-export default function Home({ onNavigate }) {
+export default function Home({ onStart }) {
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#FAFAFA]">
-      {/* Ambient gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#FFF7F2] via-[#FAFAFA] to-[#FAFAFA] pointer-events-none" />
-
-      {/* Quantum Circuit Animation — isolated layer (no backdrop-blur on top) */}
-      <div className="absolute inset-0 z-0 home-canvas-layer opacity-90">
-        <QuantumCanvas />
+    <div className="relative w-full h-screen overflow-hidden bg-[#FAFAFA] flex flex-col items-center justify-center font-sans">
+      <ScatteringBalls />
+      
+      <div className="relative z-10 text-center px-6 pointer-events-auto flex flex-col items-center">
+        <h1 className="text-7xl md:text-9xl font-serif text-[#2A2A2A] tracking-tight leading-none mb-6 select-none">
+          Seeing<br />
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#B75D29] to-[#8C461F]">Quantum.</span>
+        </h1>
+        
+        <p className="text-xl md:text-2xl text-[#71717A] max-w-2xl mx-auto font-sans mb-12 select-none">
+          An interactive, visual journey through quantum mechanics and computing. Explore entanglement, superposition, and quantum algorithms through play.
+        </p>
+        
+        <button 
+          onClick={onStart}
+          className="bg-[#2A2A2A] hover:bg-black text-white text-xl font-bold py-4 px-12 rounded-full transition-all hover:scale-105 shadow-2xl flex items-center gap-2 group"
+        >
+          Start your journey
+          <span className="group-hover:translate-x-1 transition-transform">→</span>
+        </button>
       </div>
 
-      {/* Static scrim blocks canvas motion from bleeding through UI */}
-      <div className="absolute inset-0 z-[5] home-content-scrim pointer-events-none" aria-hidden />
-
-      {/* Center Content */}
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none overflow-y-auto overscroll-contain">
-        <div className="text-center space-y-6 max-w-3xl px-6 pointer-events-auto">
-
-          <h1 className="text-7xl md:text-8xl font-serif text-[#2A2A2A] tracking-tight leading-none mb-6">
-            Seeing<br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#B75D29] to-[#8C461F]">Quantum.</span>
-          </h1>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-12 text-left w-full max-w-6xl mx-auto">
-            
-            {/* New Foundation Modules */}
-            <button onClick={() => onNavigate('staircase')} className="group home-chapter-card border border-[#E4E4E7] p-6 rounded-2xl hover:border-[#B75D29] hover:shadow-lg text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-[#B75D29] mb-2 uppercase tracking-widest">Foundation 1</div>
-              <h3 className="text-lg font-serif text-[#2A2A2A] mb-2">Quantisation</h3>
-              <p className="text-xs text-[#71717A] leading-relaxed">Discover quantization by firing photons at an atom's discrete energy levels.</p>
-            </button>
-
-            <button onClick={() => onNavigate('filter')} className="group home-chapter-card border border-[#E4E4E7] p-6 rounded-2xl hover:border-[#B75D29] hover:shadow-lg text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-[#B75D29] mb-2 uppercase tracking-widest">Foundation 2</div>
-              <h3 className="text-lg font-serif text-[#2A2A2A] mb-2">The Impossible Filter</h3>
-              <p className="text-xs text-[#71717A] leading-relaxed">Send particles through sequential magnets to witness superposition and uncertainty.</p>
-            </button>
-
-            <button onClick={() => onNavigate('doubleSlit')} className="group home-chapter-card border border-[#E4E4E7] p-6 rounded-2xl hover:border-[#B75D29] hover:shadow-lg text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-[#B75D29] mb-2 uppercase tracking-widest">Chapter 1</div>
-              <h3 className="text-lg font-serif text-[#2A2A2A] mb-2">Wave-Particle Duality</h3>
-              <p className="text-xs text-[#71717A] leading-relaxed">A 3D interactive double-slit experiment. Discover superposition and decoherence firsthand.</p>
-            </button>
-
-            <button onClick={() => onNavigate('qubit')} className="group home-chapter-card border border-[#E4E4E7] p-6 rounded-2xl hover:border-[#B75D29] hover:shadow-lg text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-[#B75D29] mb-2 uppercase tracking-widest">Chapter 2</div>
-              <h3 className="text-lg font-serif text-[#2A2A2A] mb-2">The Qubit</h3>
-              <p className="text-xs text-[#71717A] leading-relaxed">Kets, statevectors, and the Bloch sphere — the fundamental language of quantum computation.</p>
-            </button>
-
-            <button onClick={() => onNavigate('gates')} className="group home-chapter-card border border-[#E4E4E7] p-6 rounded-2xl hover:border-[#B75D29] hover:shadow-lg text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-[#B75D29] mb-2 uppercase tracking-widest">Chapter 3</div>
-              <h3 className="text-lg font-serif text-[#2A2A2A] mb-2">Quantum Gates</h3>
-              <p className="text-xs text-[#71717A] leading-relaxed">Explore how we manipulate qubits. Visualize rotations, phase shifts, and generalized unitary matrices.</p>
-            </button>
-
-            <button onClick={() => onNavigate('workbench')} className="group bg-gradient-to-br from-[#B75D29] to-[#8C461F] p-6 rounded-2xl shadow-lg shadow-[#B75D29]/20 hover:scale-[1.02] transition-transform duration-200 will-change-transform text-left relative overflow-hidden">
-              <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-              <div className="text-xs font-mono text-white/80 mb-2 uppercase tracking-widest relative z-10">Chapter 4</div>
-              <h3 className="text-lg font-serif text-white mb-2 relative z-10">Circuit Simulator</h3>
-              <p className="text-xs text-white/80 leading-relaxed relative z-10">Build complete quantum circuits, observe entanglement, and trace multi-qubit probability distributions.</p>
-            </button>
-
-            <button onClick={() => onNavigate('grovers')} className="group bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-lg shadow-gray-900/20 hover:scale-[1.02] transition-transform duration-200 will-change-transform text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-gray-400 mb-2 uppercase tracking-widest relative z-10">Chapter 5</div>
-              <h3 className="text-lg font-serif text-white mb-2 relative z-10">Grover's Algorithm</h3>
-              <p className="text-xs text-gray-400 leading-relaxed relative z-10">Cinematic scrollytelling animation or step-by-step interactive lesson — switch modes in the chapter.</p>
-            </button>
-
-            <button onClick={() => onNavigate('bb84')} className="group home-chapter-card border border-[#E4E4E7] p-6 rounded-2xl hover:border-[#B75D29] hover:shadow-lg text-left relative overflow-hidden">
-              <div className="text-xs font-mono text-[#B75D29] mb-2 uppercase tracking-widest">Chapter 6</div>
-              <h3 className="text-lg font-serif text-[#2A2A2A] mb-2">BB84 Key Distribution</h3>
-              <p className="text-xs text-[#71717A] leading-relaxed">Watch "HELLO" become photons on a quantum channel — cinematic BB84 with optional Eve.</p>
-            </button>
-
-          </div>
-        </div>
+      <div className="absolute bottom-8 z-10 text-[#71717A] font-mono text-sm tracking-widest uppercase select-none">
+        A project by <span className="font-bold text-[#B75D29]">MAD-PALs</span>
       </div>
     </div>
   );
