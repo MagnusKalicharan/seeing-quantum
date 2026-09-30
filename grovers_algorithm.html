@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grover's Algorithm - The Classical Baseline</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #111111;
+            color: #ffffff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevent body scrolling to keep layout split */
+        }
+
+        /* Split Screen Layout */
+        .left-panel {
+            width: 40vw;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #111111;
+            padding: 10vh 5vw;
+            box-sizing: border-box;
+            border-right: 1px solid #333;
+        }
+
+        .right-panel {
+            width: 60vw;
+            height: 100vh;
+            position: relative;
+            background-color: #1e1e1e;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Scrollytelling Text Content */
+        .content-section {
+            max-width: 450px;
+            margin-bottom: 50vh; /* Allow scrolling past */
+        }
+
+        .subtitle {
+            color: #ff0033;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        p {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            color: #b0b0b0;
+            margin-bottom: 1.5rem;
+        }
+
+        .highlight {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Try Next Key Button */
+        .btn-container {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        #action-btn {
+            pointer-events: auto;
+            padding: 16px 36px;
+            background: #ff0033;
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(255, 0, 51, 0.25);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #action-btn:hover:not(:disabled) {
+            background: #ff2a55;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(255, 0, 51, 0.4);
+        }
+
+        #action-btn:disabled {
+            background: #333333;
+            color: #666666;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+    </style>
+    <!-- Three.js and GSAP via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+
+    <!-- Left: Scrollytelling Content -->
+    <div class="left-panel">
+        <section class="content-section">
+            <div class="subtitle">Step 1</div>
+            <h1>The Classical Baseline</h1>
+            <p>
+                Imagine a vault with <span class="highlight">8 possible keys</span>. A classical computer has to check them one by one.
+            </p>
+            <p>
+                In the worst case scenario, it takes <span class="highlight">7 wrong guesses</span> to find the correct one. Because classical logic has no way to "look ahead", it is essentially testing blindly.
+            </p>
+            <p style="font-size: 0.95rem; color: #777; margin-top: 3rem;">
+                Use the button on the right to simulate a classical algorithm blindly searching for the correct key.
+            </p>
+        </section>
+    </div>
+
+    <!-- Right: 3D Visualization -->
+    <div class="right-panel">
+        <div id="canvas-container"></div>
+        <div class="btn-container">
+            <button id="action-btn">Try Key 1</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. SETUP SCENE, CAMERA, RENDERER ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1e1e1e);
+
+        const aspect = container.clientWidth / container.clientHeight;
+        const d = 8; // Frustum scale for Orthographic Camera
+        const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 100);
+        camera.position.set(15, 12, 15);
+        camera.lookAt(0, 2, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // --- 2. LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        scene.add(dirLight);
+
+        // Floor (so shadows have somewhere to land)
+        const floorGeo = new THREE.PlaneGeometry(50, 50);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // --- 3. BUILD THE SCENE OBJECTS ---
+        
+        // A. The Vault
+        const vaultGroup = new THREE.Group();
+        vaultGroup.position.set(-4, 0, -3);
+        scene.add(vaultGroup);
+
+        const vaultGeo = new THREE.BoxGeometry(5, 7, 2);
+        const vaultMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.7, metalness: 0.3 });
+        const vault = new THREE.Mesh(vaultGeo, vaultMat);
+        vault.position.y = 3.5;
+        vault.castShadow = true;
+        vault.receiveShadow = true;
+        vaultGroup.add(vault);
+
+        // Vault LED Screen
+        const ledGeo = new THREE.BoxGeometry(1.5, 0.6, 0.2);
+        const ledMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x111111, emissiveIntensity: 2 });
+        const led = new THREE.Mesh(ledGeo, ledMat);
+        led.position.set(0, 5.5, 1.05);
+        vaultGroup.add(led);
+
+        // Vault Keyhole
+        const keyholeGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.3, 16);
+        keyholeGeo.rotateX(Math.PI / 2);
+        const keyholeMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
+        const keyhole = new THREE.Mesh(keyholeGeo, keyholeMat);
+        keyhole.position.set(0, 3, 1.05);
+        vaultGroup.add(keyhole);
+
+        // B. The Table
+        const tableGeo = new THREE.BoxGeometry(8, 0.4, 2);
+        const tableMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.9 });
+        const table = new THREE.Mesh(tableGeo, tableMat);
+        table.position.set(2, 2, 3.5);
+        table.castShadow = true;
+        table.receiveShadow = true;
+        scene.add(table);
+
+        const tableLegGeo = new THREE.CylinderGeometry(0.1, 0.1, 2);
+        const leg1 = new THREE.Mesh(tableLegGeo, tableMat); leg1.position.set(-1.5, 1, 3.5); leg1.castShadow = true; scene.add(leg1);
+        const leg2 = new THREE.Mesh(tableLegGeo, tableMat); leg2.position.set(5.5, 1, 3.5); leg2.castShadow = true; scene.add(leg2);
+
+        // C. The Keys
+        const keys = [];
+        const keyGeo = new THREE.BoxGeometry(0.2, 0.2, 0.8);
+        const keyMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, metalness: 0.8, roughness: 0.2 });
+        
+        for (let i = 0; i < 8; i++) {
+            const key = new THREE.Mesh(keyGeo, keyMat);
+            key.position.set(-1 + i * 0.85, 2.3, 3.5);
+            key.castShadow = true;
+            scene.add(key);
+            keys.push(key);
+        }
+
+        // D. The Robot Arm
+        const armGroup = new THREE.Group();
+        armGroup.position.set(0, 0, 0); // Linear rail along X axis
+        scene.add(armGroup);
+
+        const baseGeo = new THREE.CylinderGeometry(0.6, 0.8, 0.5, 32);
+        const baseMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.5 });
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        base.position.y = 0.25;
+        base.castShadow = true;
+        armGroup.add(base);
+
+        const shoulderGroup = new THREE.Group();
+        shoulderGroup.position.y = 0.5;
+        base.add(shoulderGroup);
+
+        // Pivot joint geometry
+        const jointGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.6, 16);
+        jointGeo.rotateZ(Math.PI / 2);
+        const shoulderJoint = new THREE.Mesh(jointGeo, baseMat);
+        shoulderGroup.add(shoulderJoint);
+
+        const lowerArmGeo = new THREE.BoxGeometry(0.3, 3.5, 0.3);
+        lowerArmGeo.translate(0, 1.75, 0); // Pivot at bottom
+        const armMat = new THREE.MeshStandardMaterial({ color: 0xdd6622, roughness: 0.4 });
+        const lowerArm = new THREE.Mesh(lowerArmGeo, armMat);
+        lowerArm.castShadow = true;
+        shoulderGroup.add(lowerArm);
+
+        const elbowGroup = new THREE.Group();
+        elbowGroup.position.y = 3.5;
+        lowerArm.add(elbowGroup);
+
+        const elbowJoint = new THREE.Mesh(jointGeo, baseMat);
+        elbowGroup.add(elbowJoint);
+
+        const upperArmGeo = new THREE.BoxGeometry(0.25, 2.5, 0.25);
+        upperArmGeo.translate(0, 1.25, 0);
+        const upperArm = new THREE.Mesh(upperArmGeo, armMat);
+        upperArm.castShadow = true;
+        elbowGroup.add(upperArm);
+
+        const endEffectorGroup = new THREE.Group();
+        endEffectorGroup.position.y = 2.5;
+        upperArm.add(endEffectorGroup);
+
+        const handGeo = new THREE.BoxGeometry(0.5, 0.2, 0.5);
+        const hand = new THREE.Mesh(handGeo, baseMat);
+        hand.castShadow = true;
+        endEffectorGroup.add(hand);
+
+        // Initial Arm Pose
+        shoulderGroup.rotation.y = 0;
+        lowerArm.rotation.x = Math.PI / 8;
+        elbowGroup.rotation.x = -Math.PI / 3;
+
+        // --- 4. ANIMATION LOGIC (GSAP) ---
+        let currentKeyIndex = 0;
+        const btn = document.getElementById('action-btn');
+
+        btn.addEventListener('click', () => {
+            if (currentKeyIndex >= 8) return;
+
+            btn.disabled = true;
+            const key = keys[currentKeyIndex];
+            const isCorrect = (currentKeyIndex === 7); // The 8th key is correct
+            
+            const tl = gsap.timeline({
+                onComplete: () => {
+                    if (!isCorrect) {
+                        currentKeyIndex++;
+                        btn.innerText = `Try Key ${currentKeyIndex + 1}`;
+                        btn.disabled = false;
+                    } else {
+                        btn.innerText = `Vault Unlocked!`;
+                        // Vault unlocked visual
+                        gsap.to(vault.position, {z: -0.5, duration: 1, ease: "power2.inOut", delay: 0.5});
+                    }
+                }
+            });
+
+            // 1. Move base and hover over key
+            tl.to(armGroup.position, { x: key.position.x, duration: 0.8, ease: "power2.inOut" }, 0);
+            tl.to(shoulderGroup.rotation, { y: 0, duration: 0.8, ease: "power2.inOut" }, 0);
+            tl.to(lowerArm.rotation, { x: Math.PI / 4, duration: 0.8, ease: "power2.inOut" }, 0);
+            tl.to(elbowGroup.rotation, { x: -Math.PI / 3, duration: 0.8, ease: "power2.inOut" }, 0);
+
+            // 2. Dip down to grab
+            tl.to(lowerArm.rotation, { x: Math.PI / 3, duration: 0.3, ease: "power1.inOut" });
+            tl.to(elbowGroup.rotation, { x: -Math.PI / 2.2, duration: 0.3, ease: "power1.inOut" }, "<");
+            
+            // Attach key to hand
+            tl.call(() => {
+                endEffectorGroup.attach(key);
+                gsap.to(key.position, { x: 0, y: -0.1, z: 0, duration: 0.1 });
+                gsap.to(key.rotation, { x: 0, y: 0, z: 0, duration: 0.1 });
+            });
+
+            // 3. Lift up
+            tl.to(lowerArm.rotation, { x: Math.PI / 6, duration: 0.4, ease: "power1.inOut" });
+            tl.to(elbowGroup.rotation, { x: -Math.PI / 4, duration: 0.4, ease: "power1.inOut" }, "<");
+
+            // 4. Move to Vault
+            tl.to(armGroup.position, { x: -4, duration: 1.2, ease: "power2.inOut" });
+            tl.to(shoulderGroup.rotation, { y: Math.PI, duration: 1.2, ease: "power2.inOut" }, "<");
+            // Aim at keyhole
+            tl.to(lowerArm.rotation, { x: Math.PI / 4, duration: 1.2, ease: "power2.inOut" }, "<");
+            tl.to(elbowGroup.rotation, { x: -Math.PI / 2.8, duration: 1.2, ease: "power2.inOut" }, "<");
+
+            // Push into keyhole
+            tl.to(armGroup.position, { z: -1.2, duration: 0.3, ease: "power1.inOut" });
+
+            // 5. Flash LED (Result)
+            if (isCorrect) {
+                // Access Granted
+                tl.call(() => {
+                    ledMat.emissive.setHex(0x00ff33);
+                    ledMat.color.setHex(0x00ff33);
+                });
+                tl.to({}, { duration: 1 }); // Wait
+                // Pull out arm, leave key
+                tl.call(() => {
+                    vaultGroup.attach(key);
+                });
+                tl.to(armGroup.position, { z: 0, duration: 0.4, ease: "power1.inOut" });
+                
+                // Arm rests in victory pose
+                tl.to(armGroup.position, { x: -1, duration: 1, ease: "power2.inOut" });
+                tl.to(shoulderGroup.rotation, { y: -Math.PI/4, duration: 1, ease: "power2.inOut" }, "<");
+                tl.to(lowerArm.rotation, { x: -Math.PI/6, duration: 1, ease: "power2.inOut" }, "<");
+                tl.to(elbowGroup.rotation, { x: -Math.PI/6, duration: 1, ease: "power2.inOut" }, "<");
+
+            } else {
+                // Access Denied
+                tl.call(() => {
+                    ledMat.emissive.setHex(0xff0033);
+                    ledMat.color.setHex(0xff0033);
+                });
+                tl.to({}, { duration: 0.5 }); // Flash duration
+                tl.call(() => {
+                    ledMat.emissive.setHex(0x111111);
+                    ledMat.color.setHex(0x111111);
+                });
+
+                // Pull out
+                tl.to(armGroup.position, { z: 0, duration: 0.3, ease: "power1.inOut" });
+
+                // 6. Move to discard area
+                tl.to(armGroup.position, { x: 3, duration: 1, ease: "power2.inOut" });
+                tl.to(shoulderGroup.rotation, { y: Math.PI / 2, duration: 1, ease: "power2.inOut" }, "<");
+                tl.to(lowerArm.rotation, { x: Math.PI / 6, duration: 1, ease: "power2.inOut" }, "<");
+                tl.to(elbowGroup.rotation, { x: -Math.PI / 4, duration: 1, ease: "power2.inOut" }, "<");
+
+                // Drop Key
+                tl.call(() => {
+                    scene.attach(key);
+                    const dropX = 3 + Math.random() * 1.5;
+                    const dropZ = 1 + Math.random() * 1.5;
+                    gsap.to(key.position, { x: dropX, y: 0.1, z: dropZ, duration: 0.5, ease: "bounce.out" });
+                    gsap.to(key.rotation, { x: Math.random() * Math.PI, y: Math.random() * Math.PI, duration: 0.5 });
+                });
+
+                // 7. Return to rest pose
+                tl.to(armGroup.position, { x: 0, duration: 0.8, ease: "power2.inOut" });
+                tl.to(shoulderGroup.rotation, { y: 0, duration: 0.8, ease: "power2.inOut" }, "<");
+                tl.to(lowerArm.rotation, { x: Math.PI / 8, duration: 0.8, ease: "power2.inOut" }, "<");
+                tl.to(elbowGroup.rotation, { x: -Math.PI / 3, duration: 0.8, ease: "power2.inOut" }, "<");
+            }
+        });
+
+        // --- 5. RENDER LOOP & RESIZE ---
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const newAspect = width / height;
+            
+            camera.left = -d * newAspect;
+            camera.right = d * newAspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            
+            renderer.setSize(width, height);
+        });
+
+    </script>
+</body>
+</html>
