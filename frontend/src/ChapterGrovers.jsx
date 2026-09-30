@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+�import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import * as d3 from 'd3';
@@ -332,7 +332,7 @@ export default function ChapterGrovers({ onBack }) {
     circle.computeLineDistances();
     geometricGroup.add(circle);
     
-    const thetaAngle = Math.asin(1 / Math.sqrt(8)); 
+    const thetaAngle = Math.asin(1 / √8)); 
     const sLineGeo = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(0,0,0), 
         new THREE.Vector3(Math.cos(thetaAngle)*3.8, Math.sin(thetaAngle)*3.8, 0)
@@ -386,11 +386,11 @@ export default function ChapterGrovers({ onBack }) {
     labelS.position.set(Math.cos(thetaAngle)*3.7, Math.sin(thetaAngle)*3.7 + 0.3, 0);
     geometricGroup.add(labelS);
     
-    const labelTheta1 = createTextSprite('-θ', '#ff6666');
+    const labelTheta1 = createTextSprite('-�', '#ff6666');
     labelTheta1.position.set(1.7, -0.4, 0); 
     geometricGroup.add(labelTheta1);
     
-    const labelTheta2 = createTextSprite('+2θ', '#66ff66');
+    const labelTheta2 = createTextSprite('+2�', '#66ff66');
     labelTheta2.position.set(1.0, 1.8, 0); 
     geometricGroup.add(labelTheta2);
 
@@ -701,7 +701,7 @@ export default function ChapterGrovers({ onBack }) {
         tl.to(geometricGroup.position, { x: 0, y: 4, duration: 1 }, 0); // Ensure centered
         
         tl.call(() => {
-            const theta = Math.asin(1 / Math.sqrt(8));
+            const theta = Math.asin(1 / √8));
             sLineGeo.setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(Math.cos(theta)*3.8, Math.sin(theta)*3.8, 0)]);
             labelS.position.set(Math.cos(theta)*3.7, Math.sin(theta)*3.7 + 0.3, 0);
             
@@ -738,7 +738,7 @@ export default function ChapterGrovers({ onBack }) {
     updateThreeRotationRef.current = (val) => {
         const p = val / 100;
         let currentAngle;
-        const theta = Math.asin(1 / Math.sqrt(8));
+        const theta = Math.asin(1 / √8));
         
         if (p <= 0.5) {
             const t = p * 2;
@@ -874,7 +874,7 @@ export default function ChapterGrovers({ onBack }) {
       .attr('fill', '#cccccc')
       .attr('font-family', 'monospace')
       .attr('font-size', '10px')
-      .text('Mean (Î¼)')
+      .text('Mean (μ)')
       .style('opacity', 0);
 
     svg.append('text')
@@ -1584,7 +1584,7 @@ export default function ChapterGrovers({ onBack }) {
                       disabled={!isOracleNext || sandboxStatus !== 'idle'}
                       className={`px-4 py-3 text-xs font-bold tracking-widest uppercase rounded-xl transition-all border-2 ${!isOracleNext || sandboxStatus !== 'idle' ? 'bg-transparent border-white/20 text-white/30 cursor-not-allowed' : 'bg-transparent border-[#ff0033] text-[#ff0033] hover:bg-[#ff0033] hover:text-white shadow-[0_0_20px_rgba(255,0,51,0.2)]'}`}
                   >
-                      Oracle (-Î¸)
+                      Oracle (-θ)
                   </button>
                   
                   <button 
@@ -1592,7 +1592,7 @@ export default function ChapterGrovers({ onBack }) {
                       disabled={isOracleNext || sandboxStatus !== 'idle'}
                       className={`px-4 py-3 text-xs font-bold tracking-widest uppercase rounded-xl transition-all border-2 ${isOracleNext || sandboxStatus !== 'idle' ? 'bg-transparent border-white/20 text-white/30 cursor-not-allowed' : 'bg-transparent border-[#00ffff] text-[#00ffff] hover:bg-[#00ffff] hover:text-black shadow-[0_0_20px_rgba(0,255,255,0.2)]'}`}
                   >
-                      Diffuser (+2Î¸)
+                      Diffuser (+2θ)
                   </button>
                   
                   <div className="h-8 w-px bg-white/20 mx-1" />
@@ -1664,7 +1664,7 @@ export default function ChapterGrovers({ onBack }) {
             </div>
 
             <div className="absolute bottom-10 left-0 right-0 text-center text-[#A1A1AA] text-xs font-mono uppercase tracking-widest animate-pulse">
-                Scroll to Continue â†“
+                Scroll to Continue � 
             </div>
           </section>
 
@@ -1678,7 +1678,7 @@ export default function ChapterGrovers({ onBack }) {
               By passing our qubits through a <span className="font-medium text-[#2A2A2A]">Hadamard Gate</span>, we blast them into a uniform superposition. Instead of existing as one definite key, the system checks all 8 possibilities simultaneously as a single probability wave.
             </p>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
-              Notice the visualization on the left. All 8 states now have an identical probability amplitude of <span className="font-mono text-[#B75D29] bg-[#B75D29]/10 px-1 py-0.5 rounded">+0.353</span> (<span className="italic">1 / âˆš8</span>). 
+              Notice the visualization on the left. All 8 states now have an identical probability amplitude of <span className="font-mono text-[#B75D29] bg-[#B75D29]/10 px-1 py-0.5 rounded">+0.353</span> (<span className="italic">1 / √8</span>). 
             </p>
           </section>
 
@@ -1703,7 +1703,7 @@ export default function ChapterGrovers({ onBack }) {
               But here is the catch: quantum measurement instantly destroys the wave. 
             </p>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
-              Because probability is the <strong>amplitude squared</strong> (<span className="italic">P = |Î±|Â²</span>), a negative amplitude doesn't actually help us yet. If we measure right now, the probability of finding the red key is <strong>exactly the same</strong> as finding a blue one (12.5%).
+              Because probability is the <strong>amplitude squared</strong> (<span className="italic">P = |α|²</span>), a negative amplitude doesn't actually help us yet. If we measure right now, the probability of finding the red key is <strong>exactly the same</strong> as finding a blue one (12.5%).
             </p>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
               Click the glowing <strong>MEASURE</strong> button on the left to force a wave collapse and see what happens.
@@ -1746,10 +1746,10 @@ export default function ChapterGrovers({ onBack }) {
               But notice something mathematically beautiful: because the Oracle and Diffuser treat all wrong answers identically, they always move as a single synchronized block.
             </p>
             <p className="text-[17px] text-[#4A4A4A] leading-relaxed mb-6">
-              We can compress the entire messy chart into just two dimensions. All 7 wrong answers merge into the horizontal <span className="font-mono bg-gray-200 px-1 rounded text-xs">|râŸ©</span> axis, and our 1 correct answer becomes the vertical <span className="font-mono bg-gray-200 px-1 rounded text-xs">|wâŸ©</span> axis.
+              We can compress the entire messy chart into just two dimensions. All 7 wrong answers merge into the horizontal <span className="font-mono bg-gray-200 px-1 rounded text-xs">|r⟩</span> axis, and our 1 correct answer becomes the vertical <span className="font-mono bg-gray-200 px-1 rounded text-xs">|w⟩</span> axis.
             </p>
             <p className="text-[17px] text-[#2A2A2A] font-medium leading-relaxed mb-8">
-              Grover's algorithm is just a single vector rotating by 2Î¸ on a flat circle!
+              Grover's algorithm is just a single vector rotating by 2θ on a flat circle!
             </p>
             
             <div className={`mt-4 bg-[#1A1A1A] border border-[#333] p-6 rounded-xl shadow-lg transition-opacity duration-500 ${activeStep === 6 ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
@@ -1770,13 +1770,13 @@ export default function ChapterGrovers({ onBack }) {
                 />
                 <div className="flex justify-between mt-4 text-xs font-mono text-gray-400">
                     <span className="text-[#aaaaaa]">Start (|s&gt;)</span>
-                    <span className="text-[#ff0033]">Oracle (-Î¸)</span>
-                    <span className="text-[#00ffff]">Diffuser (+2Î¸)</span>
+                    <span className="text-[#ff0033]">Oracle (-θ)</span>
+                    <span className="text-[#00ffff]">Diffuser (+2θ)</span>
                 </div>
             </div>
             
             <div className="absolute bottom-10 left-0 right-0 text-center text-[#A1A1AA] text-xs font-mono uppercase tracking-widest animate-pulse">
-                Scroll to Enter Sandbox â†“
+                Scroll to Enter Sandbox � 
             </div>
           </section>
           
@@ -1792,10 +1792,10 @@ export default function ChapterGrovers({ onBack }) {
             <div className="p-5 bg-[#FAFAFA] border border-[#E4E4E7] rounded-xl space-y-3 mb-6">
               <h3 className="text-[17px] font-bold text-[#2A2A2A]">How to Perform Grover's:</h3>
               <ol className="list-decimal pl-4 text-xs text-[#71717A] space-y-2">
-                <li>Click <strong>[Oracle (-Î¸)]</strong> to mark the secret key, flipping its quantum phase downwards.</li>
-                <li>Click <strong>[Diffuser (+2Î¸)]</strong> to fold the probabilities around the average, shrinking the wrong answers and growing the target.</li>
+                <li>Click <strong>[Oracle (-θ)]</strong> to mark the secret key, flipping its quantum phase downwards.</li>
+                <li>Click <strong>[Diffuser (+2θ)]</strong> to fold the probabilities around the average, shrinking the wrong answers and growing the target.</li>
                 <li>Repeat this cycle. Notice how the target probability climbs rapidly!</li>
-                <li>But be carefulâ€”if you loop too many times, the wave collapses in on itself and you'll miss the target.</li>
+                <li>But be careful�if you loop too many times, the wave collapses in on itself and you'll miss the target.</li>
                 <li>When the probability hits peak amplitude (&gt;95%), click <strong>[MEASURE]</strong> to unlock the vault.</li>
               </ol>
             </div>
@@ -1812,9 +1812,9 @@ export default function ChapterGrovers({ onBack }) {
                   
                   {/* HERO HEADER */}
                   <div className="text-center mb-16">
-                      <div className="text-xs font-sans text-[#B75D29] font-bold tracking-[0.2em] uppercase mb-4">Chapter 3 â€” Deep Dive</div>
+                      <div className="text-xs font-sans text-[#B75D29] font-bold tracking-[0.2em] uppercase mb-4">Chapter 3 � Deep Dive</div>
                       <h1 className="text-4xl md:text-5xl lg:text-6xl text-[#2A2A2A] mb-6 leading-tight">The Mathematics of <br/>Grover's Algorithm</h1>
-                      <p className="text-lg md:text-xl text-[#71717A] font-sans font-light max-w-2xl mx-auto">The algorithm that broke symmetric cryptography â€” and how the linear algebra actually works.</p>
+                      <p className="text-lg md:text-xl text-[#71717A] font-sans font-light max-w-2xl mx-auto">The algorithm that broke symmetric cryptography � and how the linear algebra actually works.</p>
                       <div className="w-24 h-px bg-[#B75D29]/30 mx-auto mt-12"></div>
                   </div>
 
@@ -1945,12 +1945,12 @@ export default function ChapterGrovers({ onBack }) {
                           <div className="grid grid-cols-1 gap-6 text-[17px]">
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">01 / Initial Superposition</h3>
-                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|s⟩ = 0.353|000⟩ + 0.353|001⟩ + ... + <span className="font-bold text-black">0.353|101⟩</span> + ... + 0.353|111⟩</p>
+                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|ψ₁⟩ = 0.353|000⟩ + 0.353|001⟩ + ... + <span className="font-bold text-black">0.353|101⟩</span> + ... + 0.353|111⟩</p>
                               </div>
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">02 / Apply Oracle</h3>
                                   <p className="mb-2">The Oracle flips the sign of the target state ({"$|101\\rangle$"}):</p>
-                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|Ïˆâ‚âŸ© = 0.353|000⟩ + 0.353|001⟩ + ... <span className="font-bold text-[#ff0033]">- 0.353|101⟩</span> + ... + 0.353|111⟩</p>
+                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|ψ₁⟩ = 0.353|000⟩ + 0.353|001⟩ + ... <span className="font-bold text-[#ff0033]">- 0.353|101⟩</span> + ... + 0.353|111⟩</p>
                               </div>
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">03 / Calculate the Mean</h3>
@@ -1959,12 +1959,12 @@ export default function ChapterGrovers({ onBack }) {
                               </div>
                               <div className="bg-white p-6 rounded-xl border border-[#E4E4E7] shadow-sm">
                                   <h3 className="font-bold text-[#B75D29] mb-2 font-mono">04 / Apply Diffuser (Inversion About Mean)</h3>
-                                  <p className="mb-3">We apply the geometric reflection formula: <code className="bg-[#FAFAFA] px-2 py-1 rounded border border-[#E4E4E7] text-[#2A2A2A]">New = 2Î¼ - Old</code></p>
+                                  <p className="mb-3">We apply the geometric reflection formula: <code className="bg-[#FAFAFA] px-2 py-1 rounded border border-[#E4E4E7] text-[#2A2A2A]">New = 2μ - Old</code></p>
                                   <ul className="list-disc pl-5 mb-4 text-[#71717A] space-y-2">
-                                      <li>For the 7 wrong answers: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - 0.353 â‰ˆ 0.177</code></li>
-                                      <li>For the 1 target answer: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - (-0.353) â‰ˆ 0.883</code></li>
+                                      <li>For the 7 wrong answers: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - 0.353 ≈ 0.177</code></li>
+                                      <li>For the 1 target answer: <code className="bg-[#FAFAFA] px-1 rounded">2(0.265) - (-0.353) ≈ 0.883</code></li>
                                   </ul>
-                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|Ïˆâ‚‚âŸ© = 0.177|000⟩ + 0.177|001⟩ + ... + <span className="font-bold text-[#00ffff] bg-black px-1">0.883|101⟩</span> + ... + 0.177|111⟩</p>
+                                  <p className="font-mono bg-[#FAFAFA] p-3 rounded text-[15px] overflow-x-auto text-[#4A4A4A] border border-[#E4E4E7]">|ψ₂⟩ = 0.177|000⟩ + 0.177|001⟩ + ... + <span className="font-bold text-[#00ffff] bg-black px-1">0.883|101⟩</span> + ... + 0.177|111⟩</p>
                                   <div className="mt-6 p-4 bg-[#F6EEE8] border border-[#B75D29]/20 rounded text-[#B75D29] font-bold text-center">
                                       The probability of measuring the target jumped from 12.5% to {"$(0.883)^2 \\approx 78\\%$"} in a single step!
                                   </div>
