@@ -8,6 +8,7 @@ import ModuleStaircase from './ModuleStaircase';
 import ModuleFilter from './ModuleFilter';
 import FloatingTutorButton from './FloatingTutorButton';
 import { getSharedCircuitFromUrl } from './circuitStorage';
+import ChapterGrovers from './ChapterGrovers';
 
 export default function App() {
   const [page, setPage] = useState('home');
@@ -39,6 +40,7 @@ export default function App() {
       {page === 'qubit' && <ChapterQubit onBack={() => setPage('home')} />}
       {page === 'gates' && <ChapterGates onBack={() => setPage('home')} />}
       {page === 'doubleSlit' && <DoubleSlit onBack={() => setPage('home')} onNavigate={setPage} />}
+      {page === 'grovers' && <ChapterGrovers onBack={() => setPage('home')} />}
       {page === 'workbench' && (
         <Workbench 
           onBack={handleBackToHome} 
@@ -52,3 +54,4 @@ export default function App() {
     </>
   );
 }
+

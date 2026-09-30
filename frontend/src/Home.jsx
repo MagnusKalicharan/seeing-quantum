@@ -310,6 +310,12 @@ export default function Home({ onNavigate }) {
               <p className="text-xs text-white/80 leading-relaxed relative z-10">Build complete quantum circuits, observe entanglement, and trace multi-qubit probability distributions.</p>
             </button>
 
+            <button onClick={() => onNavigate('grovers')} className="group bg-gray-900 border border-gray-700 p-6 rounded-2xl shadow-lg shadow-gray-900/20 hover:scale-[1.02] transition-transform text-left relative overflow-hidden">
+              <div className="text-xs font-mono text-gray-400 mb-2 uppercase tracking-widest relative z-10">Chapter 5</div>
+              <h3 className="text-lg font-serif text-white mb-2 relative z-10">Grover's Algorithm</h3>
+              <p className="text-xs text-gray-400 leading-relaxed relative z-10">Experience the sheer speed of quantum search via a scrollytelling walkthrough of Grover's Algorithm.</p>
+            </button>
+
           </div>
         </div>
       </div>
