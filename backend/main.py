@@ -259,7 +259,7 @@ async def tutor_chat(req: TutorRequest):
     # Call Ollama /api/chat
     ollama_model = req.model or "llama3"
     try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             payload = {
                 "model": ollama_model,
                 "messages": messages,
@@ -270,6 +270,15 @@ async def tutor_chat(req: TutorRequest):
                 }
             }
             res = await client.post("http://localhost:11434/api/chat", json=payload)
+            
+            # If GPU/CUDA fails (e.g., 500 Internal Server Error / invalid kernel image), retry on CPU
+            if res.status_code != 200:
+                print(f"Ollama returned {res.status_code}. Attempting fallback with CPU (num_gpu=0)...")
+                cpu_payload = dict(payload)
+                cpu_payload["options"] = dict(payload["options"])
+                cpu_payload["options"]["num_gpu"] = 0
+                res = await client.post("http://localhost:11434/api/chat", json=cpu_payload)
+
             if res.status_code == 200:
                 data = res.json()
                 reply_text = data.get("message", {}).get("content", "")
@@ -280,8 +289,9 @@ async def tutor_chat(req: TutorRequest):
                     "sources_used": [b["source"] for b in book_snippets]
                 }
             else:
+                err_msg = res.text
                 return {
-                    "error": f"Ollama returned status {res.status_code}",
+                    "error": f"Ollama returned status {res.status_code}: {err_msg}",
                     "source": "error"
                 }
     except Exception as e:

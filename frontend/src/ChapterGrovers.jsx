@@ -166,57 +166,109 @@ export default function ChapterGrovers({ onBack }) {
     composer.addPass(renderScene);
     composer.addPass(bloomPass);
 
-    // 2. LIGHTING
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // 2. LIGHTING (Enhanced Three-Point + Rim Lighting for crisp lock visibility)
+    const ambientLight = new THREE.AmbientLight(0xdce7f5, 0.65);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(10, 20, 5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight.position.set(12, 20, 8);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
     scene.add(dirLight);
 
+    // Rim light to outline the vault silhouette against the dark background
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.1);
+    rimLight.position.set(-15, 14, -10);
+    scene.add(rimLight);
+
+    // Subtle front warm fill light
+    const fillLight = new THREE.DirectionalLight(0xffeedd, 0.45);
+    fillLight.position.set(6, 6, 14);
+    scene.add(fillLight);
+
     // 3. BUILD THE SCENE OBJECTS
     const floorGeo = new THREE.PlaneGeometry(50, 50);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x0a0a14, roughness: 1 });
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x111628, roughness: 0.85, metalness: 0.2 });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
+    // Subtle high-tech ground grid for depth perception
+    const grid = new THREE.GridHelper(50, 30, 0x1e293b, 0x131a2b);
+    grid.position.y = 0.01;
+    scene.add(grid);
+
     const vaultGroup = new THREE.Group();
     vaultGroup.position.set(-4, 0, -3);
     scene.add(vaultGroup);
 
+    // Main vault casing with polished titanium slate finish
     const vaultGeo = new THREE.BoxGeometry(5, 7, 2);
-    const vaultMat = new THREE.MeshStandardMaterial({ color: 0x1f1f25, roughness: 0.7, metalness: 0.3 });
+    const vaultMat = new THREE.MeshStandardMaterial({ color: 0x3b4456, roughness: 0.35, metalness: 0.65 });
     const vault = new THREE.Mesh(vaultGeo, vaultMat);
     vault.position.y = 3.5;
     vault.castShadow = true;
     vault.receiveShadow = true;
     vaultGroup.add(vault);
 
-    const ledGeo = new THREE.BoxGeometry(1.5, 0.6, 0.2);
-    const ledMat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x111111, emissiveIntensity: 2 });
+    // Inset security door panel for rich industrial bevel
+    const doorGeo = new THREE.BoxGeometry(4.4, 6.4, 0.1);
+    const doorMat = new THREE.MeshStandardMaterial({ color: 0x222938, roughness: 0.4, metalness: 0.8 });
+    const door = new THREE.Mesh(doorGeo, doorMat);
+    door.position.set(0, 0, 1.05);
+    vault.add(door);
+
+    // Glowing cyan cyber trim border
+    const trimGeo = new THREE.BoxGeometry(4.6, 6.6, 0.02);
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.5 });
+    const trim = new THREE.Mesh(trimGeo, trimMat);
+    trim.position.set(0, 0, 1.01);
+    vault.add(trim);
+
+    // LED Status Display with protective frame
+    const ledFrameGeo = new THREE.BoxGeometry(1.8, 0.8, 0.15);
+    const ledFrameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 });
+    const ledFrame = new THREE.Mesh(ledFrameGeo, ledFrameMat);
+    ledFrame.position.set(0, 5.5, 1.12);
+    vaultGroup.add(ledFrame);
+
+    const ledGeo = new THREE.BoxGeometry(1.5, 0.5, 0.1);
+    const ledMat = new THREE.MeshStandardMaterial({ color: 0x334155, emissive: 0x0f172a, emissiveIntensity: 1.2 });
     const led = new THREE.Mesh(ledGeo, ledMat);
-    led.position.set(0, 5.5, 1.05);
+    led.position.set(0, 5.5, 1.18);
     vaultGroup.add(led);
 
-    const keyholeGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.3, 16);
+    // Amber metallic bezel dial around keyhole
+    const bezelGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.1, 32);
+    bezelGeo.rotateX(Math.PI / 2);
+    const bezelMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+    const bezel = new THREE.Mesh(bezelGeo, bezelMat);
+    bezel.position.set(0, 3, 1.14);
+    vaultGroup.add(bezel);
+
+    const keyholeGeo = new THREE.CylinderGeometry(0.25, 0.25, 0.25, 16);
     keyholeGeo.rotateX(Math.PI / 2);
-    const keyholeMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
+    const keyholeMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.8 });
     const keyhole = new THREE.Mesh(keyholeGeo, keyholeMat);
-    keyhole.position.set(0, 3, 1.05);
+    keyhole.position.set(0, 3, 1.2);
     vaultGroup.add(keyhole);
 
+    // Workbench Table with cyan edge glow
     const tableGeo = new THREE.BoxGeometry(8, 0.4, 2);
-    const tableMat = new THREE.MeshStandardMaterial({ color: 0x2A2A2A, roughness: 0.9 });
+    const tableMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.5 });
     const table = new THREE.Mesh(tableGeo, tableMat);
     table.position.set(2, 2, 3.5);
     table.castShadow = true;
     table.receiveShadow = true;
     scene.add(table);
+
+    const tableEdgeGeo = new THREE.BoxGeometry(8, 0.08, 0.08);
+    const tableEdgeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 });
+    const tableEdge = new THREE.Mesh(tableEdgeGeo, tableEdgeMat);
+    tableEdge.position.set(2, 2.2, 4.5);
+    scene.add(tableEdge);
 
     const keys = [];
     const keyGeo = new THREE.BoxGeometry(0.2, 0.2, 0.8);
@@ -482,8 +534,8 @@ export default function ChapterGrovers({ onBack }) {
             });
             tl.to({}, { duration: 0.5 }); 
             tl.call(() => {
-                ledMat.emissive.setHex(0x111111);
-                ledMat.color.setHex(0x111111);
+                ledMat.emissive.setHex(0x0f172a);
+                ledMat.color.setHex(0x334155);
             });
 
             tl.to(armGroup.position, { z: 0.5, duration: 0.3, ease: "power1.inOut" });
